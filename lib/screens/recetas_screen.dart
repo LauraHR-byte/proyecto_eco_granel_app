@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 // Definimos el color verde primario para el tema
 const Color _primaryGreen = Color(0xFF4CAF50);
+const Color _unselectedDarkColor = Color(0xFF333333);
 
 // --- Componente de la Tarjeta de Receta (RecetaCard) ---
 class RecetaCard extends StatelessWidget {
   final String title;
   final String description;
-  final String imageUrl;
+  final String
+  imageUrl; // Ahora apunta a una ruta local (e.g., assets/images/nombre.jpg)
 
   const RecetaCard({
     super.key,
@@ -18,8 +20,12 @@ class RecetaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width,
+    // Usamos InkWell para que la tarjeta sea clickeable e incluya el ícono de flecha
+    return InkWell(
+      onTap: () {
+        // Lógica de navegación o acción al hacer clic en la tarjeta
+        debugPrint('Receta seleccionada: $title');
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Card(
@@ -38,9 +44,9 @@ class RecetaCard extends StatelessWidget {
                   width: 100,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    // Uso de Image.network para cargar desde un URL
+                    // Uso de Image.asset para cargar desde ruta local
                     image: DecorationImage(
-                      image: NetworkImage(imageUrl),
+                      image: AssetImage(imageUrl), // Usamos AssetImage
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -62,21 +68,30 @@ class RecetaCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      // Línea de separación verde debajo del título
+                      const SizedBox(height: 2),
+                      Container(height: 2, width: 100, color: _primaryGreen),
+                      const SizedBox(height: 8),
                       Text(
                         description,
                         style: TextStyle(
                           fontFamily: "roboto",
                           fontSize: 12,
-                          color: Colors.grey[800],
+                          color: _unselectedDarkColor,
                         ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 6),
-                      // Línea de separación verde
-                      Container(height: 3, width: 100, color: _primaryGreen),
                     ],
+                  ),
+                ),
+                // Icono Arrow Forward iOS a la derecha
+                const Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: _primaryGreen,
+                    size: 24,
                   ),
                 ),
               ],
@@ -107,7 +122,7 @@ class Recetas extends StatelessWidget {
               fontFamily: "roboto",
               fontSize: 24,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: _unselectedDarkColor,
             ),
           ),
           // Se quita centerTitle: true para alinearlo a la izquierda
@@ -122,20 +137,32 @@ class Recetas extends StatelessWidget {
               Tab(
                 child: Text(
                   "Desayunos",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: "roboto",
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Tab(
                 child: Text(
                   "Snacks",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: "roboto",
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               // Pestaña de Favoritos
               Tab(
                 child: Text(
                   "Favoritos",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: "roboto",
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -158,27 +185,24 @@ class _DesayunosTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: const <Widget>[
+        // Uso de rutas de assets locales
         RecetaCard(
           title: "Granola Casera",
           description:
               "Preparar tu propia granola en casa es una excelente manera de disfrutar un desayuno saludable y libre de aditivos.",
-          // Ejemplo de URL real de imagen
-          imageUrl:
-              "https://www.pexels.com/es-es/foto/mujer-con-camisa-azul-sosteniendo-un-vaso-transparente-7772026/",
+          imageUrl: "assets/images/granola.jpg",
         ),
         RecetaCard(
           title: "Pudding de Chía y Cúrcuma",
           description:
               "Este pudding es una opción nutritiva y fácil de preparar, cargada de antioxidantes y grasas saludables.",
-          imageUrl:
-              "https://www.pexels.com/es-es/foto/mujer-con-camisa-azul-sosteniendo-un-vaso-transparente-7772026/",
+          imageUrl: "assets/images/chia_curcuma.jpg",
         ),
         RecetaCard(
           title: "Avena Cremosa con Frutas y Semillas",
           description:
               "Comienza tu día con un desayuno nutritivo y equilibrado.",
-          imageUrl:
-              "https://www.pexels.com/es-es/foto/mujer-con-camisa-azul-sosteniendo-un-vaso-transparente-7772026/",
+          imageUrl: "assets/images/avena-cremosa.jpg",
         ),
       ],
     );
@@ -193,33 +217,31 @@ class _SnacksTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: const <Widget>[
+        // Uso de rutas de assets locales
         RecetaCard(
           title: "Galletas de Avena y Almendras",
           description:
               "Una opción saludable, crujiente y deliciosa, perfecta para acompañar con café o té.",
-          imageUrl:
-              "https://www.pexels.com/es-es/foto/mujer-con-camisa-azul-sosteniendo-un-vaso-transparente-7772026/",
+          imageUrl: "assets/images/galletas.jpg",
         ),
         RecetaCard(
           title: "Barritas Energéticas de Cacao y Nueces",
           description:
               "Si buscas un snack natural y delicioso para recargar energías, estas barritas caseras son la opción ideal.",
-          imageUrl:
-              "https://www.pexels.com/es-es/foto/mujer-con-camisa-azul-sosteniendo-un-vaso-transparente-7772026/",
+          imageUrl: "assets/images/barritas.jpg",
         ),
         RecetaCard(
           title: "Chips Crujientes de Garbanzo con Especias",
           description:
               "Disfruta de un snack crujiente, sabroso y lleno de proteína vegetal.",
-          imageUrl:
-              "https://www.pexels.com/es-es/foto/mujer-con-camisa-azul-sosteniendo-un-vaso-transparente-7772026/",
+          imageUrl: "assets/images/chips-garbanzos.jpg",
         ),
       ],
     );
   }
 }
 
-// --- Contenido de la Pestaña FAVORITOS (Nueva) ---
+// --- Contenido de la Pestaña FAVORITOS ---
 class _FavoritosTab extends StatelessWidget {
   const _FavoritosTab();
 
@@ -233,11 +255,19 @@ class _FavoritosTab extends StatelessWidget {
           SizedBox(height: 10),
           Text(
             "¡Aún no tienes recetas favoritas!",
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 18,
+              fontFamily: "roboto",
+              color: Colors.grey,
+            ),
           ),
           Text(
             "Marca el corazón ❤️ para guardarlas aquí.",
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: "roboto",
+              color: Colors.grey,
+            ),
           ),
         ],
       ),

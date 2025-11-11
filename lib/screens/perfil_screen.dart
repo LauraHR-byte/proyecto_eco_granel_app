@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 
-// Definimos los colores del tema y la paleta necesaria
-// Eliminada _primaryGreen, ya que no se utiliza y causaba advertencia.
-const Color _darkTextColor = Color(
-  0xFF333333,
-); // Color oscuro para texto principal
-const Color _orangeColor = Color(
-  0xFFC76939,
-); // Color del botón "Cerrar Sesión" y "Editar Perfil"
+const Color _unselectedDarkColor = Color(0xFF333333);
+const Color _primaryGreen = Color(0xFF4CAF50);
+const Color _orangeColor = Color(0xFFC76939);
 
-// --- Componente de Fila de Opción de Menú (Para secciones de lista) ---
 class _ProfileOptionRow extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -28,10 +22,10 @@ class _ProfileOptionRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
         child: Row(
           children: <Widget>[
-            Icon(icon, color: Colors.black, size: 24),
+            Icon(icon, color: _unselectedDarkColor, size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -39,12 +33,20 @@ class _ProfileOptionRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontFamily: "roboto",
+                      color: _unselectedDarkColor,
+                    ),
                   ),
                   if (subtitle != null && icon != Icons.language)
                     Text(
                       subtitle!,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: "roboto",
+                        color: Colors.grey,
+                      ),
                     ),
                 ],
               ),
@@ -52,10 +54,14 @@ class _ProfileOptionRow extends StatelessWidget {
             if (subtitle != null && icon == Icons.language)
               Text(
                 subtitle!,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontFamily: "roboto",
+                  color: Colors.grey,
+                ),
               ),
             const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 18),
           ],
         ),
       ),
@@ -63,29 +69,27 @@ class _ProfileOptionRow extends StatelessWidget {
   }
 }
 
-// --- Encabezado de Sección (Para "Tu actividad", "Preferencias", "Soporte") ---
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
 
   @override
-  // ¡CORRECCIÓN APLICADA AQUÍ! Se corrige la sintaxis de BuildContext.
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 8.0),
+      padding: const EdgeInsets.fromLTRB(18.0, 24.0, 18.0, 8.0),
       child: Text(
         title,
         style: const TextStyle(
           fontSize: 18,
+          fontFamily: "roboto",
           fontWeight: FontWeight.bold,
-          color: _darkTextColor,
+          color: _unselectedDarkColor,
         ),
       ),
     );
   }
 }
 
-// --- Pantalla Principal del Perfil (PerfilScreen) ---
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
 
@@ -111,7 +115,6 @@ class PerfilScreen extends StatelessWidget {
           children: <Widget>[
             const _ProfileHeader(),
 
-            // --- Tu actividad ---
             const _SectionHeader(title: "Tu actividad"),
             _ProfileOptionRow(
               title: "Guardado",
@@ -124,11 +127,6 @@ class PerfilScreen extends StatelessWidget {
               onTap: () => _handleTap(context, 'Likes'),
             ),
             _ProfileOptionRow(
-              title: "Comentarios",
-              icon: Icons.chat_bubble_outline,
-              onTap: () => _handleTap(context, 'Comentarios'),
-            ),
-            _ProfileOptionRow(
               title: "Mis pedidos",
               icon: Icons.local_shipping_outlined,
               onTap: () => _handleTap(context, 'Mis pedidos'),
@@ -136,7 +134,6 @@ class PerfilScreen extends StatelessWidget {
 
             const Divider(height: 30, thickness: 1, color: Color(0xFFE0E0E0)),
 
-            // --- Preferencias ---
             const _SectionHeader(title: "Preferencias"),
             _ProfileOptionRow(
               title: "Idioma",
@@ -147,7 +144,6 @@ class PerfilScreen extends StatelessWidget {
 
             const Divider(height: 30, thickness: 1, color: Color(0xFFE0E0E0)),
 
-            // --- Soporte ---
             const _SectionHeader(title: "Soporte"),
             _ProfileOptionRow(
               title: "Política de Privacidad",
@@ -162,9 +158,11 @@ class PerfilScreen extends StatelessWidget {
               onTap: () => _handleTap(context, 'Términos y condiciones'),
             ),
 
-            // 3. Botón de Cerrar Sesión
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18.0,
+                vertical: 24.0,
+              ),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -180,7 +178,11 @@ class PerfilScreen extends StatelessWidget {
                   ),
                   child: const Text(
                     "Cerrar Sesión",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: "roboto",
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -193,28 +195,25 @@ class PerfilScreen extends StatelessWidget {
   }
 }
 
-// --- Encabezado del Perfil de Usuario ---
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader();
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(18.0, 16.0, 18.0, 0.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              // Avatar del Usuario - Usando un icono de Flutter en su lugar
               CircleAvatar(
                 radius: 35,
                 backgroundColor: Colors.grey[200],
-                child: const Icon(Icons.person, size: 40, color: Colors.grey),
+                child: const Icon(Icons.person, size: 40, color: _primaryGreen),
               ),
               const SizedBox(width: 12),
 
-              // Nombre y @Usuario
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -229,14 +228,17 @@ class _ProfileHeader extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     "@anita_ambientalista",
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: "roboto",
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Botón "Editar Perfil"
           OutlinedButton(
             onPressed: () => _handleTap(context, 'Editar Perfil'),
             style: OutlinedButton.styleFrom(
@@ -244,12 +246,16 @@ class _ProfileHeader extends StatelessWidget {
               side: const BorderSide(color: _orangeColor),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(
               "Editar Perfil",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontFamily: "roboto",
+                fontSize: 14,
+              ),
             ),
           ),
         ],
@@ -263,14 +269,3 @@ class _ProfileHeader extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text('Acción: $action')));
   }
 }
-
-// Nota: Para que el AssetImage funcione, debes tener una imagen llamada 'profile_image.png'
-// en la carpeta 'assets/' y declarar la carpeta en el archivo pubspec.yaml.
-// Si deseas usar un icono de Flutter en su lugar, reemplaza la sección de Container con CircleAvatar:
-/*
-CircleAvatar(
-  radius: 35,
-  backgroundColor: Colors.grey[200],
-  child: const Icon(Icons.person, size: 40, color: Colors.grey),
-),
-*/

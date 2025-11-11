@@ -668,7 +668,7 @@ Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir product
 \n\nComprar a granel no solo es una tendencia, sino un cambio de hábito que hace la diferencia. **¿Te animas a probarlo?**
            ''',
 
-      'imageUrl': 'assets/images/compra-granel.jpg',
+      'imageUrl': 'assets/images/compra.jpg',
       'comments': 1,
       'likes': 25,
       'initialComments': [
