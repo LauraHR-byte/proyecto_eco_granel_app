@@ -33,11 +33,12 @@ class SomosScreen extends StatelessWidget {
               "Compra consciente, vive sostenible",
               style: TextStyle(
                 color: _unselectedDarkColor,
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            centerTitle: true,
+            centerTitle: false,
+            titleSpacing: 0.0,
           ),
 
           // Contenido principal de la pantalla
@@ -45,21 +46,27 @@ class SomosScreen extends StatelessWidget {
             delegate: SliverChildListDelegate([
               // Contenedor principal para padding
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 22.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const <Widget>[
                     SizedBox(height: 10),
 
                     // Imagen Principal (Contaminación por Plástico/Océano)
-                    _MainImage(imageAsset: 'assets/images/granola.jpg'),
+                    _MainImage(imageAsset: 'assets/images/oceano.jpg'),
                     SizedBox(height: 15),
 
                     // Texto de introducción
                     Text(
-                      "Creemos que cada pequeña elección puede generar un gran impacto. Nos especializamos en la venta de alimentos a granel, ofreciendo productos frescos y de alta calidad sin empaques innecesarios. Nuestro objetivo es brindar una alternativa de consumo más sostenible, accesible y saludable para todas las personas que desean reducir desperdicios y hacer compras responsables.",
+                      "Creemos que cada pequeña elección puede generar un gran"
+                      " impacto. Nos especializamos en la venta de alimentos a"
+                      " granel, ofreciendo productos frescos y de alta calidad"
+                      " sin empaques innecesarios. Nuestro objetivo es brindar"
+                      " una alternativa de consumo más sostenible, accesible y"
+                      " saludable para todas las personas que desean reducir"
+                      " desperdicios y hacer compras responsables.",
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         color: _unselectedDarkColor,
                         height: 1.4,
                       ),
@@ -83,11 +90,11 @@ class SomosScreen extends StatelessWidget {
                     // Separador y Texto Final
                     SizedBox(height: 20),
                     Text(
-                      "¡Gracias por ser parte de este movimiento **sostenible**!",
+                      "¡Gracias por ser parte de este movimiento sostenible!",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _primaryGreen,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -117,7 +124,7 @@ class _MainImage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Container con una imagen simulada
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(12.0),
       child: Image.asset(
         imageAsset,
         fit: BoxFit.cover,
@@ -148,7 +155,7 @@ class _SectionHeader extends StatelessWidget {
         title,
         style: const TextStyle(
           color: _primaryGreen,
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -165,18 +172,24 @@ class _HistoryContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const <Widget>[
         Text(
-          "Todo empezó con un sueño: hacer del mundo un lugar más consciente, donde cada acción cuente. Creemos que pequeñas acciones generan grandes cambios, y por eso decidimos crear un espacio donde encontrar productos que respeten el planeta y cuiden de nosotros.",
+          "Todo empezó con un sueño: hacer del mundo un lugar más consciente,"
+          " donde cada acción cuente. Creemos que pequeñas acciones generan"
+          " grandes cambios, y por eso decidimos crear un espacio donde encontrar"
+          " productos que respeten el planeta y cuiden de nosotros.",
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             height: 1.5,
             color: _unselectedDarkColor,
           ),
         ),
         SizedBox(height: 10),
         Text(
-          "Cada alimento a granel, cada artículo sostenible que ofrecemos, ha sido elegido con amor y responsabilidad. Queremos ser parte de una compra diferente, sin desperdicios innecesarios y con la esperanza de que estés contribuyendo a un futuro más limpio y justo.",
+          "Cada alimento a granel, cada artículo sostenible que ofrecemos,"
+          " ha sido elegido con amor y responsabilidad. Queremos ser parte de"
+          " una compra diferente, sin desperdicios innecesarios y con la"
+          " esperanza de que estés contribuyendo a un futuro más limpio y justo.",
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             height: 1.5,
             color: _unselectedDarkColor,
           ),
@@ -197,10 +210,10 @@ class _MissionContent extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(8.0),
           child: Image.asset(
-            'assets/images/granola.jpg',
+            'assets/images/somos.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
-            height: 180,
+            height: 260,
             errorBuilder: (context, error, stackTrace) => Container(
               width: double.infinity,
               height: 180,
@@ -213,9 +226,11 @@ class _MissionContent extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         const Text(
-          "Facilitar el acceso a productos a granel de primera calidad y asequibles, promoviendo hábitos de consumo responsables que contribuyan al bienestar de las personas y el cuidado del planeta.",
+          "Facilitar el acceso a productos a granel de primera calidad y"
+          " asequibles, promoviendo hábitos de consumo responsables que"
+          " contribuyan al bienestar de las personas y el cuidado del planeta.",
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             height: 1.5,
             color: _unselectedDarkColor,
           ),
@@ -236,38 +251,48 @@ class _ValuesContent extends StatelessWidget {
         _ValueItem(
           title: "Sostenibilidad",
           description:
-              "Creemos en un modelo de negocio que respeta el medio ambiente, eliminando los envases plásticos y fomentando el consumo consciente.",
+              "Creemos en un modelo de negocio que respeta el medio ambiente,"
+              " eliminando los envases plásticos y fomentando el consumo"
+              " consciente.",
         ),
         _ValueItem(
           title: "Calidad y frescura",
           description:
-              "Nos comprometemos a seleccionar cuidadosamente cada producto para garantizar ingredientes naturales, sin aditivos y en su punto óptimo de frescura.",
+              "Nos comprometemos a seleccionar cuidadosamente cada producto"
+              " para garantizar ingredientes naturales, sin aditivos y en su"
+              " punto óptimo de frescura.",
         ),
         _ValueItem(
           title: "Compromiso con la comunidad",
           description:
-              "Trabajamos con proveedores responsables y apoyamos la economía local, fortaleciendo el comercio justo.",
+              "Trabajamos con proveedores responsables y apoyamos la economía"
+              "local, fortaleciendo el comercio justo.",
         ),
         _ValueItem(
           title: "Flexibilidad y ahorro",
           description:
-              "Ofrecemos la posibilidad de comprar la cantidad exacta que se necesita, lo que permite reducir desperdicios y ahorrar dinero.",
+              "Ofrecemos la posibilidad de comprar la cantidad exacta que"
+              " se necesita, lo que permite reducir desperdicios y ahorrar"
+              " dinero.",
         ),
         _ValueItem(
           title: "Educación y conciencia",
           description:
-              "Queremos inspirar a más personas a adoptar un estilo de vida más sostenible a través de nuestro blog, talleres y actividades.",
+              "Queremos inspirar a más personas a adoptar un estilo de vida"
+              " más sostenible a través de nuestro blog, talleres y actividades.",
         ),
         _ValueItem(
           title: "Únete al cambio",
           description:
-              "Comprar a granel no es solo una tendencia, es una forma de contribuir a un futuro mejor para todos.",
+              "Comprar a granel no es solo una tendencia, es una forma de"
+              " contribuir a un futuro mejor para todos.",
         ),
         const SizedBox(height: 10),
         const Text(
-          "Te invitamos a formar parte de esta comunidad que elige consumir con conciencia. Juntos podemos hacer una gran diferencia.",
+          "Te invitamos a formar parte de esta comunidad que elige consumir"
+          " con conciencia. Juntos podemos hacer una gran diferencia.",
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             height: 1.5,
             color: _unselectedDarkColor,
           ),

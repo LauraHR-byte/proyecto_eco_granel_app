@@ -679,6 +679,7 @@ Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir product
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Comunidad Eco Granel",
@@ -691,7 +692,6 @@ Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir product
         ),
         centerTitle: false,
         elevation: 1,
-        backgroundColor: Colors.white,
       ),
       body: ListView.builder(
         itemCount: blogPosts.length,

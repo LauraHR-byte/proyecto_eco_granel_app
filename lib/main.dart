@@ -60,12 +60,14 @@ class _EcoGranelState extends State<EcoGranel> {
   // Constante para el índice de la pantalla de perfil
   static const int _perfilIndex = 4;
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
-    ForoScreen(),
-    TiendaScreen(),
-    Recetas(),
-    PerfilScreen(),
+  // 💡 AJUSTE CLAVE: Usamos un getter para construir la lista de widgets y pasar el callback.
+  List<Widget> get _widgetOptions => <Widget>[
+    // Pasamos el método _onItemTapped (que cambia el índice) a HomeScreen
+    HomeScreen(onNavigate: _onItemTapped),
+    const ForoScreen(),
+    const TiendaScreen(),
+    const Recetas(),
+    const PerfilScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -84,17 +86,22 @@ class _EcoGranelState extends State<EcoGranel> {
     });
   }
 
-  static const double _iconSize = 33.0;
+  static const double _iconSize = 32.0;
 
   // Widget para crear el AppBar
   PreferredSizeWidget _buildCustomAppBar() {
     return AppBar(
-      centerTitle: true,
-      title: SizedBox(
-        height: 40, // Altura controlada del logo
-        child: Image.asset(
-          'assets/images/logo_ecogranel.png',
-          fit: BoxFit.contain,
+      centerTitle: false,
+      title: Padding(
+        padding: const EdgeInsets.only(
+          left: 8.0,
+        ), // Ajusta el padding según necesites
+        child: SizedBox(
+          height: 24, // Altura controlada del logo
+          child: Image.asset(
+            'assets/images/logo_ecogranel.png',
+            fit: BoxFit.contain,
+          ),
         ),
       ),
       actions: <Widget>[
@@ -109,40 +116,29 @@ class _EcoGranelState extends State<EcoGranel> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     // Lógica para quitar el AppBar en la pantalla de Perfil
     final bool showAppBar = _selectedIndex != _perfilIndex;
+    //El AppBar solo se muestra si el carrito NO está abierto.
+    final bool shouldShowAppBar = showAppBar && !_isCartOpen;
 
     return Scaffold(
       // Si showAppBar es false (estamos en PerfilScreen), el AppBar es null.
-      appBar: showAppBar ? _buildCustomAppBar() : null,
+      appBar: shouldShowAppBar ? _buildCustomAppBar() : null,
       body: Stack(
         children: [
           AbsorbPointer(
             absorbing: _isCartOpen,
             child: IndexedStack(
               index: _selectedIndex,
-              children: _widgetOptions,
+              children: _widgetOptions, // 👈 Usa el getter aquí
             ),
           ),
 
-          // Fondo oscuro al abrir el carrito
-          if (_isCartOpen)
-            ModalBarrier(
-              dismissible: true,
-              onDismiss: _closeCart,
-              color: Colors.black.withAlpha(102),
-            ),
-
-          // Pantalla deslizante del carrito
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            left: _isCartOpen ? screenWidth * 0.15 : screenWidth,
-            top: 0,
-            bottom: 0,
-            width: screenWidth * 0.85,
+          //Usamos Visibility (o Offstage) para mostrar/ocultar instantáneamente el carrito.
+          Visibility(
+            visible: _isCartOpen,
+            // Oscurece el fondo antes de que se muestre el carrito si lo necesitas,
+            // color: Colors.black.withOpacity(0.4),
             child: CarritoScreen(onClose: _closeCart, onGoToShop: _goToShop),
           ),
         ],
