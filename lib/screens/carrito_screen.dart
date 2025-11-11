@@ -31,19 +31,25 @@ class CarritoScreen extends StatelessWidget {
         // El ícono de retroceso (arrow_back) se muestra automáticamente.
         // Al presionarlo, el AppBar llamará a onClose para manejar el cierre desde main.dart.
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(
+            Icons.arrow_back,
+            size: 30,
+            color: _unselectedDarkColor,
+          ),
           onPressed: onClose, // Usamos el callback para cerrar
         ),
         title: const Text(
           'Tu Carrito',
           style: TextStyle(
             fontSize: 20,
+            fontFamily: "roboto",
             fontWeight: FontWeight.bold,
             color:
                 _unselectedDarkColor, // Asegura que el color sea oscuro si el fondo es blanco
           ),
         ),
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: 0.0,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -83,6 +89,7 @@ class CarritoScreen extends StatelessWidget {
               '¡Tu carrito está vacío!',
               style: TextStyle(
                 fontSize: 20,
+                fontFamily: "roboto",
                 fontWeight: FontWeight.bold,
                 color: _unselectedDarkColor,
               ),
@@ -91,7 +98,11 @@ class CarritoScreen extends StatelessWidget {
             const Text(
               'Parece que aún no has agregado productos a granel.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                fontFamily: "roboto",
+              ),
             ),
             const SizedBox(height: 32),
 
@@ -99,10 +110,13 @@ class CarritoScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed:
                   onGoToShop, // Llama al callback que navega al índice 2 (Tienda)
-              icon: const Icon(Icons.storefront_outlined),
+              icon: const Icon(Icons.storefront_outlined, size: 24),
               label: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: Text('Ir a la Tienda', style: TextStyle(fontSize: 16)),
+                child: Text(
+                  'Ir a la Tienda',
+                  style: TextStyle(fontSize: 20, fontFamily: "roboto"),
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,

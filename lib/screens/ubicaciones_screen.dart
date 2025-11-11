@@ -18,7 +18,11 @@ class UbicacionesScreen extends StatelessWidget {
         centerTitle: false,
         titleSpacing: 0.0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _unselectedDarkColor),
+          icon: const Icon(
+            Icons.arrow_back,
+            size: 30,
+            color: _unselectedDarkColor,
+          ),
           onPressed: () {
             Navigator.pop(context);
           },

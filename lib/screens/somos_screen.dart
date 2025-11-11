@@ -4,11 +4,320 @@ import 'package:flutter/material.dart';
 const Color _primaryGreen = Color(0xFF4CAF50);
 // Definición del color oscuro para títulos y texto principal
 const Color _unselectedDarkColor = Color(0xFF424242);
-// Color para los íconos de "Me Gusta" y "Comentar"
-const Color _lightGreen = Color(0xFF4CAF50); // Mismo verde principal
+
+// Colores del Blog necesarios para ReactionBar
+const Color _reactionButtonColor = Color(0xFF6E6E6E);
+const Color _likeColor = Color(0xFF4CAF50);
+const Color _commentTextColor = Color(0xFF424242);
+
+// --- Comentario Individual (Para el Modal) ---
+class _CommentItem extends StatelessWidget {
+  final String author;
+  final String content;
+  final String time;
+
+  const _CommentItem({
+    required this.author,
+    required this.content,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Ícono o avatar simulado
+          const CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.grey,
+            child: Icon(Icons.person, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      author,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: _unselectedDarkColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      time,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: _commentTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Modal de Comentarios ---
+class CommentsModal extends StatefulWidget {
+  final String postTitle;
+  final List<Map<String, String>> initialComments;
+
+  const CommentsModal({
+    super.key,
+    required this.postTitle,
+    required this.initialComments,
+  });
+
+  @override
+  State<CommentsModal> createState() => _CommentsModalState();
+}
+
+class _CommentsModalState extends State<CommentsModal> {
+  late List<Map<String, String>> _comments;
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _comments = List.from(widget.initialComments);
+  }
+
+  void _addComment() {
+    if (_commentController.text.trim().isNotEmpty) {
+      setState(() {
+        _comments.insert(0, {
+          'author': 'Usuario Actual',
+          'content': _commentController.text.trim(),
+          'time': 'Ahora',
+        });
+        _commentController.clear();
+      });
+      FocusScope.of(context).unfocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Comentarios',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryGreen,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const Divider(),
+
+              Expanded(
+                child: ListView.separated(
+                  itemCount: _comments.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final comment = _comments[index];
+                    return _CommentItem(
+                      author: comment['author']!,
+                      content: comment['content']!,
+                      time: comment['time']!,
+                    );
+                  },
+                ),
+              ),
+              const Divider(),
+
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: 'Añadir un comentario...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          fillColor: Colors.grey[200],
+                          filled: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 10,
+                          ),
+                        ),
+                        minLines: 1,
+                        maxLines: 4,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.send, color: _primaryGreen),
+                      onPressed: _addComment,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- Componente de Barra de Reacciones (SIN botón de Guardar, Centrado) ---
+class _ReactionBar extends StatefulWidget {
+  final int initialLikes;
+  final int commentsCount;
+  final String postTitle;
+  final List<Map<String, String>> initialComments;
+
+  const _ReactionBar({
+    required this.initialLikes,
+    required this.commentsCount,
+    required this.postTitle,
+    required this.initialComments,
+  });
+
+  @override
+  State<_ReactionBar> createState() => _ReactionBarState();
+}
+
+class _ReactionBarState extends State<_ReactionBar> {
+  late bool _isLiked;
+  late int _currentLikes;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLiked = false;
+    _currentLikes = widget.initialLikes;
+  }
+
+  void _toggleLike() {
+    setState(() {
+      _isLiked = !_isLiked;
+      if (_isLiked) {
+        _currentLikes++;
+      } else {
+        _currentLikes--;
+      }
+    });
+  }
+
+  void _showCommentsModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CommentsModal(
+          postTitle: widget.postTitle,
+          initialComments: widget.initialComments,
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // AJUSTE CLAVE: Centrar los botones
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center, // <-- ESTE ES EL CAMBIO
+      children: [
+        // 1. Botón de Me Gusta
+        Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                _isLiked ? Icons.favorite : Icons.favorite_border,
+                color: _isLiked ? _likeColor : _reactionButtonColor,
+              ),
+              onPressed: _toggleLike,
+            ),
+            Text(
+              _currentLikes.toString(),
+              style: const TextStyle(color: _reactionButtonColor, fontSize: 13),
+            ),
+          ],
+        ),
+
+        const SizedBox(width: 20), // <-- ESPACIO AUMENTADO
+        // 2. Botón de Comentar (Abre Modal de Comentarios)
+        TextButton.icon(
+          icon: const Icon(
+            Icons.comment_outlined,
+            size: 20,
+            color: _reactionButtonColor,
+          ),
+          label: const Text(
+            'Comentarios',
+            style: TextStyle(color: _reactionButtonColor, fontSize: 13),
+          ),
+          onPressed: () => _showCommentsModal(context),
+        ),
+      ],
+    );
+  }
+}
 
 class SomosScreen extends StatelessWidget {
   const SomosScreen({super.key});
+
+  // Datos simulados para los botones de interacción y comentarios
+  static const int _simulatedLikes = 15;
+  static const List<Map<String, String>> _simulatedComments = [
+    {
+      'author': 'Elena M.',
+      'content': '¡Qué gran iniciativa! Necesitamos más espacios así.',
+      'time': 'hace 2h',
+    },
+    {
+      'author': 'Roberto G.',
+      'content': 'Me encanta el concepto. ¿Tienen envíos a domicilio?',
+      'time': 'hace 5h',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +334,11 @@ class SomosScreen extends StatelessWidget {
             pinned: true, // Se queda fijo en la parte superior
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: _unselectedDarkColor),
+              icon: const Icon(
+                Icons.arrow_back,
+                size: 30,
+                color: _unselectedDarkColor,
+              ),
               // Al presionar, vuelve a la pantalla anterior
               onPressed: () => Navigator.of(context).pop(),
             ),
@@ -34,6 +347,7 @@ class SomosScreen extends StatelessWidget {
               style: TextStyle(
                 color: _unselectedDarkColor,
                 fontSize: 20,
+                fontFamily: "roboto",
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -49,15 +363,17 @@ class SomosScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 22.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const <Widget>[
-                    SizedBox(height: 10),
+                  children: <Widget>[
+                    const SizedBox(height: 10),
 
                     // Imagen Principal (Contaminación por Plástico/Océano)
-                    _MainImage(imageAsset: 'assets/images/oceano.jpg'),
-                    SizedBox(height: 15),
+                    const _MainImage(
+                      imageAsset: 'assets/images/plasticos-mar.jpg',
+                    ),
+                    const SizedBox(height: 15),
 
                     // Texto de introducción
-                    Text(
+                    const Text(
                       "Creemos que cada pequeña elección puede generar un gran"
                       " impacto. Nos especializamos en la venta de alimentos a"
                       " granel, ofreciendo productos frescos y de alta calidad"
@@ -67,42 +383,103 @@ class SomosScreen extends StatelessWidget {
                       " desperdicios y hacer compras responsables.",
                       style: TextStyle(
                         fontSize: 14,
+                        fontFamily: "roboto",
                         color: _unselectedDarkColor,
                         height: 1.4,
                       ),
                     ),
-                    Divider(height: 30, thickness: 1, color: Colors.grey),
+                  ],
+                ),
+              ),
 
+              // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
+              const Divider(
+                color: Color.fromRGBO(224, 224, 224, 100),
+                height: 50,
+                thickness: 5,
+                indent: 0,
+                endIndent: 0,
+              ),
+
+              // Contenido con el padding horizontal de 22.0
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                     // 2. Nuestra Historia
-                    _SectionHeader(title: "Nuestra Historia"),
-                    _HistoryContent(),
-                    Divider(height: 30, thickness: 1, color: Colors.grey),
+                    const _SectionHeader(title: "Nuestra Historia"),
+                    const _HistoryContent(),
+                  ],
+                ),
+              ),
 
+              // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
+              const Divider(
+                color: Color.fromRGBO(224, 224, 224, 100),
+                height: 50,
+                thickness: 5,
+                indent: 0,
+                endIndent: 0,
+              ),
+
+              // Contenido con el padding horizontal de 22.0
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                     // 3. Nuestra Misión
-                    _SectionHeader(title: "Nuestra Misión"),
-                    _MissionContent(),
-                    Divider(height: 30, thickness: 1, color: Colors.grey),
+                    const _SectionHeader(title: "Nuestra Misión"),
+                    const _MissionContent(),
+                  ],
+                ),
+              ),
 
+              // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
+              const Divider(
+                color: Color.fromRGBO(224, 224, 224, 100),
+                height: 50,
+                thickness: 5,
+                indent: 0,
+                endIndent: 0,
+              ),
+
+              // Contenido con el padding horizontal de 22.0
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                     // 4. Nuestros Valores
-                    _SectionHeader(title: "Nuestros Valores"),
-                    _ValuesContent(),
+                    const _SectionHeader(title: "Nuestros Valores"),
+                    const _ValuesContent(),
 
                     // Separador y Texto Final
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       "¡Gracias por ser parte de este movimiento sostenible!",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _primaryGreen,
                         fontSize: 16,
+                        fontFamily: "roboto",
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 20),
 
-                    // Íconos de "Me Gusta" y "Comentar"
-                    _EngagementButtons(),
-                    SizedBox(height: 40),
+                    // Barra de Reacciones (CENTRADA)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: _ReactionBar(
+                        initialLikes: _simulatedLikes,
+                        commentsCount: _simulatedComments.length,
+                        postTitle: "Compra consciente, vive sostenible",
+                        initialComments: _simulatedComments,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -114,7 +491,7 @@ class SomosScreen extends StatelessWidget {
   }
 }
 
-// --- Componentes Reutilizables ---
+// --- Componentes Reutilizables (Modificados) ---
 
 class _MainImage extends StatelessWidget {
   final String imageAsset;
@@ -129,10 +506,10 @@ class _MainImage extends StatelessWidget {
         imageAsset,
         fit: BoxFit.cover,
         width: double.infinity,
-        height: 200, // Altura ajustable
+        height: 260.0, // <-- MODIFICACIÓN A 260
         errorBuilder: (context, error, stackTrace) => Container(
           width: double.infinity,
-          height: 200,
+          height: 260.0, // <-- MODIFICACIÓN A 260
           color: _primaryGreen.withAlpha(50),
           child: const Center(
             child: Icon(Icons.public, size: 50, color: _primaryGreen),
@@ -156,6 +533,7 @@ class _SectionHeader extends StatelessWidget {
         style: const TextStyle(
           color: _primaryGreen,
           fontSize: 16,
+          fontFamily: "roboto",
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -178,6 +556,7 @@ class _HistoryContent extends StatelessWidget {
           " productos que respeten el planeta y cuiden de nosotros.",
           style: TextStyle(
             fontSize: 14,
+            fontFamily: "roboto",
             height: 1.5,
             color: _unselectedDarkColor,
           ),
@@ -190,6 +569,7 @@ class _HistoryContent extends StatelessWidget {
           " esperanza de que estés contribuyendo a un futuro más limpio y justo.",
           style: TextStyle(
             fontSize: 14,
+            fontFamily: "roboto",
             height: 1.5,
             color: _unselectedDarkColor,
           ),
@@ -231,6 +611,7 @@ class _MissionContent extends StatelessWidget {
           " contribuyan al bienestar de las personas y el cuidado del planeta.",
           style: TextStyle(
             fontSize: 14,
+            fontFamily: "roboto",
             height: 1.5,
             color: _unselectedDarkColor,
           ),
@@ -248,40 +629,40 @@ class _ValuesContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _ValueItem(
+        const _ValueItem(
           title: "Sostenibilidad",
           description:
               "Creemos en un modelo de negocio que respeta el medio ambiente,"
               " eliminando los envases plásticos y fomentando el consumo"
               " consciente.",
         ),
-        _ValueItem(
+        const _ValueItem(
           title: "Calidad y frescura",
           description:
               "Nos comprometemos a seleccionar cuidadosamente cada producto"
               " para garantizar ingredientes naturales, sin aditivos y en su"
               " punto óptimo de frescura.",
         ),
-        _ValueItem(
+        const _ValueItem(
           title: "Compromiso con la comunidad",
           description:
               "Trabajamos con proveedores responsables y apoyamos la economía"
-              "local, fortaleciendo el comercio justo.",
+              " local, fortaleciendo el comercio justo.",
         ),
-        _ValueItem(
+        const _ValueItem(
           title: "Flexibilidad y ahorro",
           description:
               "Ofrecemos la posibilidad de comprar la cantidad exacta que"
               " se necesita, lo que permite reducir desperdicios y ahorrar"
               " dinero.",
         ),
-        _ValueItem(
+        const _ValueItem(
           title: "Educación y conciencia",
           description:
               "Queremos inspirar a más personas a adoptar un estilo de vida"
               " más sostenible a través de nuestro blog, talleres y actividades.",
         ),
-        _ValueItem(
+        const _ValueItem(
           title: "Únete al cambio",
           description:
               "Comprar a granel no es solo una tendencia, es una forma de"
@@ -293,6 +674,7 @@ class _ValuesContent extends StatelessWidget {
           " con conciencia. Juntos podemos hacer una gran diferencia.",
           style: TextStyle(
             fontSize: 14,
+            fontFamily: "roboto",
             height: 1.5,
             color: _unselectedDarkColor,
           ),
@@ -310,7 +692,7 @@ class _ValueItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -319,50 +701,22 @@ class _ValueItem extends StatelessWidget {
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
+              fontFamily: "roboto",
               color: _unselectedDarkColor,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             description,
-            style: const TextStyle(fontSize: 15, color: _unselectedDarkColor),
+            style: const TextStyle(
+              fontSize: 14,
+              fontFamily: "roboto",
+              color: _unselectedDarkColor,
+              height: 1.5,
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _EngagementButtons extends StatelessWidget {
-  const _EngagementButtons();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        TextButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.favorite_border, color: _lightGreen, size: 20),
-          label: const Text(
-            "Me Gusta",
-            style: TextStyle(color: _lightGreen, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(width: 20),
-        TextButton.icon(
-          onPressed: () {},
-          icon: const Icon(
-            Icons.comment_outlined,
-            color: _lightGreen,
-            size: 20,
-          ),
-          label: const Text(
-            "Comentar",
-            style: TextStyle(color: _lightGreen, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -37,7 +37,7 @@ class _CommentItem extends StatelessWidget {
           // Ícono o avatar simulado
           const CircleAvatar(
             radius: 18,
-            backgroundColor: Colors.grey, // Cambiado a gris para distinguirlo
+            backgroundColor: Colors.grey, // Cambiado de white a grey
             child: Icon(Icons.person, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 10),
@@ -52,6 +52,7 @@ class _CommentItem extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
+                        fontFamily: "roboto",
                         color: _unselectedDarkColor,
                       ),
                     ),
@@ -67,6 +68,7 @@ class _CommentItem extends StatelessWidget {
                   content,
                   style: const TextStyle(
                     fontSize: 14,
+                    fontFamily: "roboto",
                     color: _commentTextColor,
                   ),
                 ),
@@ -128,12 +130,12 @@ class _CommentsModalState extends State<CommentsModal> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.all(16.0),
+      insetPadding: const EdgeInsets.all(18.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
           height: MediaQuery.of(context).size.height * 0.8, // 80% de la altura
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -141,11 +143,11 @@ class _CommentsModalState extends State<CommentsModal> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // CAMBIO SOLICITADO: Solo muestra "Comentarios"
                   const Text(
                     'Comentarios',
                     style: TextStyle(
                       fontSize: 18,
+                      fontFamily: "roboto",
                       fontWeight: FontWeight.bold,
                       color: _primaryGreen,
                     ),
@@ -303,7 +305,7 @@ class _ReactionBarState extends State<ReactionBar> {
             ),
             Text(
               _currentLikes.toString(),
-              style: const TextStyle(color: _reactionButtonColor, fontSize: 13),
+              style: const TextStyle(color: _reactionButtonColor, fontSize: 14),
             ),
           ],
         ),
@@ -315,10 +317,13 @@ class _ReactionBarState extends State<ReactionBar> {
             size: 20,
             color: _reactionButtonColor,
           ),
-          // CAMBIO SOLICITADO: Mostrar solo la palabra "Comentarios"
           label: const Text(
             'Comentarios',
-            style: TextStyle(color: _reactionButtonColor, fontSize: 13),
+            style: TextStyle(
+              color: _reactionButtonColor,
+              fontFamily: "roboto",
+              fontSize: 14,
+            ),
           ),
           onPressed: () => _showCommentsModal(context),
         ),
@@ -344,6 +349,7 @@ class MarkdownTextWidget extends StatelessWidget {
 
   final TextStyle baseStyle = const TextStyle(
     fontSize: 14,
+    fontFamily: "roboto",
     color: Color(0xFF424242),
     height: 1.4,
   );
@@ -370,6 +376,7 @@ class MarkdownTextWidget extends StatelessWidget {
             style: currentStyle.copyWith(
               fontWeight: FontWeight.bold,
               color: _unselectedDarkColor,
+              fontFamily: "roboto",
             ),
           ),
         );
@@ -455,142 +462,140 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     final String displayText = widget.fullContent;
     // Determina si el texto es lo suficientemente largo para necesitar "Ver Más"
-    // Usamos una estimación simple basada en la cantidad de líneas.
     final bool needsExpansion =
         displayText.split('\n').length > _maxLinesExcerpt;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 16.0,
-                right: 16.0,
-                top: 16.0,
+      // Padding horizontal de 16.0 para los bordes del contenido
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const SizedBox(height: 8), // Pequeño espacio superior
+              // Título
+              Text(
+                widget.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontFamily: "roboto",
+                  fontWeight: FontWeight.bold,
+                  color: _unselectedDarkColor,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Título y Metadatos
+              const SizedBox(height: 8),
+
+              // Metadatos (Autor y fecha)
+              Row(
+                children: [
                   Text(
-                    widget.title,
+                    '${widget.author} · ${widget.date}',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 12,
+                      fontFamily: "roboto",
+                      color: Colors.grey,
                       fontWeight: FontWeight.bold,
-                      color: _unselectedDarkColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      // Autor y fecha
-                      Text(
-                        '${widget.author} · ${widget.date}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      // El icono de Guardar del metadato se quita ya que ahora está en la ReactionBar
-                      // Se mantiene el spacer para alinear el texto
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Línea de separación verde
-                  Container(height: 3, width: 60, color: _primaryGreen),
-                  const SizedBox(height: 10),
-
-                  // **Contenido del Post**
-                  // Permite expandir al tocar el texto
-                  GestureDetector(
-                    onTap: () {
-                      if (needsExpansion && !_isExpanded) {
-                        setState(() {
-                          _isExpanded = true; // Solo se permite expandir
-                        });
-                      }
-                    },
-                    child: MarkdownTextWidget(
-                      text: displayText,
-                      // Se usa maxLines si NO está expandido
-                      maxLines: _isExpanded ? null : _maxLinesExcerpt,
-                      overflow: TextOverflow.fade,
                     ),
                   ),
-
-                  // **Botón Ver Más (Condicional)**
-                  // Solo se muestra si necesita expansión y aún no está expandido
-                  if (needsExpansion && !_isExpanded)
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _isExpanded =
-                              true; // CAMBIO SOLICITADO: Solo 'Ver Más'
-                        });
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(50, 20),
-                        alignment: Alignment.centerLeft,
-                      ),
-                      child: const Text(
-                        'Ver Más', // CAMBIO SOLICITADO: Se muestra solo "Ver Más"
-                        style: TextStyle(
-                          color: _primaryGreen,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                  const Spacer(),
                 ],
               ),
-            ),
+              const SizedBox(height: 8),
 
-            // **Sección de la Imagen**
-            if (widget.imageUrl.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: Center(
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                      // Simulación de carga de imagen de asset
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/${widget.imageUrl}'),
-                        fit: BoxFit.cover,
-                      ),
+              // Línea de separación verde
+              Container(height: 3, width: 60, color: _primaryGreen),
+              const SizedBox(height: 10),
+
+              // **Contenido del Post (Markdown)**
+              GestureDetector(
+                onTap: () {
+                  if (needsExpansion && !_isExpanded) {
+                    setState(() {
+                      _isExpanded = true;
+                    });
+                  }
+                },
+                child: MarkdownTextWidget(
+                  text: displayText,
+                  maxLines: _isExpanded ? null : _maxLinesExcerpt,
+                  overflow: TextOverflow.fade,
+                ),
+              ),
+
+              // **Botón Ver Más (Condicional)**
+              if (needsExpansion && !_isExpanded)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isExpanded = true;
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(50, 20),
+                    alignment: Alignment.centerLeft,
+                  ),
+                  child: const Text(
+                    'Ver Más',
+                    style: TextStyle(
+                      color: _primaryGreen,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "roboto",
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          // Fin del contenido principal del texto
+
+          // **Sección de la Imagen**
+          if (widget.imageUrl.isNotEmpty)
+            Padding(
+              // Padding vertical para la imagen
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Center(
+                child: Container(
+                  height: 260,
+                  width: double.infinity,
+                  margin: EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[300],
+                    // Cambio clave: Usar AssetImaage con la ruta completa
+                    image: DecorationImage(
+                      image: AssetImage(widget.imageUrl),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
-
-            // **Barra de Reacciones**
-            const Divider(height: 1, color: Colors.grey),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: ReactionBar(
-                initialLikes: widget.likesCount,
-                commentsCount: widget.commentsCount,
-                postTitle: widget.title,
-                initialComments: widget.initialComments,
-              ),
             ),
-          ],
-        ),
+
+          // CAMBIO SOLICITADO: El Divider que estaba aquí ha sido eliminado.
+
+          // **Barra de Reacciones**
+          const Divider(
+            height: 1,
+            color: Colors.grey,
+          ), // Mantenemos el divisor antes de las reacciones
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 0.0,
+            ), // Se ajusta a 0 para el margen de 16.0
+            child: ReactionBar(
+              initialLikes: widget.likesCount,
+              commentsCount: widget.commentsCount,
+              postTitle: widget.title,
+              initialComments: widget.initialComments,
+            ),
+          ),
+          const SizedBox(height: 8), // Pequeño espacio inferior
+        ],
       ),
     );
   }
@@ -604,37 +609,39 @@ class ForoScreen extends StatelessWidget {
     {
       'title': 'El Impacto de los Envases en el Medioambiente y Cómo Reducirlo',
       'author': 'EcoGranel',
-      'date': '1 min de lectura',
+      'date': '2 min de lectura',
       'fullContent': '''
 Los envases plásticos y desechables forman parte de nuestra vida cotidiana, pero ¿te has preguntado cuál es su verdadero impacto en el planeta? A continuación, te mostramos por qué debemos reducir su uso y cómo la compra a granel puede ser una gran solución.
 
-**La Realidad del Plástico**
-Se estima que el 91% del plástico producido no se recicla y termina en vertederos o en los océanos.
+\n**La Realidad del Plástico**\n
+* Se estima que el 91% del plástico producido no se recicla y termina en vertederos o en los océanos.
 * Un envase de plástico puede tardar hasta 500 años en degradarse por completo.
 * Cada año, más de 8 millones de toneladas de plástico llegan a los océanos, afectando la fauna marina.
 
-**¿Cómo Reducir el Uso de Envases?**
-* Compra a granel - Optar por productos sin envase reduce significativamente los residuos plásticos.
-* Usa recipientes reutilizables - Frascos de vidrio, bolsas de tela y contenedores de acero inoxidable son excelentes opciones.
-* Prefiere materiales biodegradables - Busca alternativas como papel reciclado, vidrio o envases compostables.
-* Reutiliza y recicla correctamente - Asegúrate de separar y reciclar los residuos de forma adecuada.
+\n**¿Cómo Reducir el Uso de Envases?**\n
+* **Compra a granel -** Optar por productos sin envase reduce significativamente los residuos plásticos.
+* **Usa recipientes reutilizables -** Frascos de vidrio, bolsas de tela y contenedores de acero inoxidable son excelentes opciones.
+* **Prefiere materiales biodegradables -** Busca alternativas como papel reciclado, vidrio o envases compostables.
+* **Reutiliza y recicla correctamente -** Asegúrate de separar y reciclar los residuos de forma adecuada.
 
-**Un Cambio de Hábito, un Gran Impacto**
-Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir productos sin envase y fomentar la reutilización, contribuyes a un mundo más limpio y sostenible. Cada elección cuenta. ¿Te sumas al movimiento cero residuos?''',
-      'imageUrl': 'placeholder_envases.jpg',
+\n**Un Cambio de Hábito, un Gran Impacto**\n
+Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir productos sin envase y fomentar la reutilización, contribuyes a un mundo más limpio y sostenible. \n\n**Cada elección cuenta. ¿Te sumas al movimiento cero residuos?**''',
+      'imageUrl': 'assets/images/oceano.jpg',
       'comments': 2,
       'likes': 42,
       'initialComments': [
         {
           'author': 'María L.',
           'content':
-              '¡Excelente artículo! La información sobre el 91% no reciclado es impactante.',
+              "¡Excelente artículo! La información sobre el 91% no reciclado"
+              " es impactante.",
           'time': '1 día',
         },
         {
           'author': 'Juan P.',
           'content':
-              'Empecé a comprar a granel y realmente se nota la diferencia en los residuos.',
+              "Empecé a comprar a granel y realmente se nota la diferencia"
+              " en los residuos.",
           'time': '3 horas',
         },
       ],
@@ -643,10 +650,25 @@ Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir product
       'title':
           'Comprar a Granel: Una Forma Inteligente de Ahorrar y Cuidar el Planeta',
       'author': 'EcoGranel',
-      'date': '2 min de lectura',
+      'date': '1 min de lectura',
       'fullContent':
-          'En un mundo donde el desperdicio de alimentos y plásticos sigue en aumento, optar por la **compra a granel** es una decisión responsable que beneficia tanto a tu **bolsillo** como al medioambiente. Las ventajas incluyen:\n* Precios más bajos.\n* Capacidad de comprar solo lo necesario.\n* Reducción drástica de residuos de envases.\n\nEs una forma de consumo consciente y una elección poderosa para un futuro más verde. ¡Únete a la compra consciente y haz la diferencia en cada visita al supermercado!',
-      'imageUrl': 'placeholder_ahorro.jpg',
+          "En un mundo donde el desperdicio de alimentos y plásticos"
+          " sigue en aumento, optar por la compra a granel es una"
+          " decisión responsable que beneficia tanto a tu bolsillo"
+          " como al medioambiente."
+          '''\n\n**Beneficios de comprar a granel**\n
+* **Menos desperdicio:** Adquieres solo la cantidad que necesitas, evitando excedentes que terminan en la basura.
+* **Menos plástico:** Al eliminar envases innecesarios, reduces la contaminación y fomentas un estilo de vida más sostenible.
+* **Ahorro económico:** Comprar sin empaques reduce costos y te permite acceder a productos de alta calidad a mejor precio.
+
+\n**Consejos para una compra eficiente**\n
+* Lleva tus propios envases reutilizables o bolsas ecológicas.
+* Organiza tu despensa con frascos de vidrio para conservar la frescura de los productos.
+* Prioriza alimentos no procesados y de origen natural.
+\n\nComprar a granel no solo es una tendencia, sino un cambio de hábito que hace la diferencia. **¿Te animas a probarlo?**
+           ''',
+
+      'imageUrl': 'assets/images/compra-granel.jpg',
       'comments': 1,
       'likes': 25,
       'initialComments': [
@@ -662,8 +684,21 @@ Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir product
       'author': 'EcoGranel',
       'date': '1 min de lectura',
       'fullContent':
-          'Para aprovechar al máximo los beneficios de comprar a granel, es importante saber cómo **almacenar correctamente** cada producto y evitar desperdicios. Consejos clave:\n* Usa **frascos herméticos de vidrio**.\n* Almacena en un lugar fresco y seco.\n* Etiqueta las fechas de compra.\n\nEsto no solo mantiene la **frescura** sino que también te ayuda a rotar tu inventario de forma eficiente. ¡Adiós al desperdicio!',
-      'imageUrl': 'alimentos_granel.png', // Usado como referencia visual
+          "Para aprovechar al máximo los beneficios de comprar a granel,"
+          " es importante saber cómo almacenar correctamente cada producto"
+          " y evitar desperdicios."
+          '''\n\n**Tips de almacenamiento según el tipo de alimento**\n
+* **Granos y legumbres:** Guarda en frascos herméticos de vidrio en un lugar fresco y seco para evitar humedad y plagas.
+* **Harinas y cereales:** Consérvalos en envases bien cerrados y, si es posible, en la nevera para prolongar su frescura.
+* **Frutos secos y semillas:** Almacena en recipientes opacos y refrigéralos si no los consumirás pronto.
+* **Especias y condimentos:** Manténlos en frascos oscuros, lejos del calor y la luz directa para preservar su aroma.
+
+\n**Truco extra:**\n
+Si notas que algunos frutos secos han perdido su crocancia, tuéstalos unos minutos en el horno a temperatura baja para recuperar su textura.
+
+\n\nTus compras a granel se mantendrán frescas y deliciosas por más tiempo. **¡Empieza a organizar tu despensa de forma eficiente y ecológica!**
+''',
+      'imageUrl': 'assets/images/conservar.jpg',
       'comments': 1,
       'likes': 58,
       'initialComments': [
@@ -676,39 +711,80 @@ Adoptar pequeñas acciones diarias puede marcar la diferencia. Al elegir product
     },
   ];
 
+  // Implementación del divisor solicitado
+  Widget _articleDivider() {
+    return const Divider(
+      color: Color.fromRGBO(224, 224, 224, 1), // Color gris claro
+      height: 10, // Espacio vertical que ocupa el divisor
+      thickness: 5, // Grosor de la línea
+      indent: 0, // Aseguramos que no haya indentación inicial
+      endIndent: 0, // Aseguramos que no haya indentación final
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          "Comunidad Eco Granel",
-          style: TextStyle(
-            fontFamily: "roboto",
-            fontSize: 24,
-            color: _unselectedDarkColor,
-            fontWeight: FontWeight.w600,
+      // CAMBIO CLAVE: Quitamos el AppBar para que el título sea parte del scroll
+      // y usamos CustomScrollView con SliverList.
+      body: CustomScrollView(
+        slivers: <Widget>[
+          // Sliver para el Título (simulando un AppBar pero sin fijarlo)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                20.0,
+                14.0,
+                16.0,
+                8.0,
+              ), // Padding superior y a los lados
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Comunidad Eco Granel",
+                    style: TextStyle(
+                      fontFamily: "roboto",
+                      fontSize: 24,
+                      color: _unselectedDarkColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        centerTitle: false,
-        elevation: 1,
-      ),
-      body: ListView.builder(
-        itemCount: blogPosts.length,
-        itemBuilder: (context, index) {
-          final post = blogPosts[index];
-          return PostCard(
-            title: post['title']!,
-            author: post['author']!,
-            date: post['date']!,
-            fullContent: post['fullContent']!,
-            imageUrl: post['imageUrl']!,
-            commentsCount: post['comments'],
-            likesCount: post['likes'],
-            initialComments:
-                post['initialComments'], // Pasar los comentarios iniciales
-          );
-        },
+
+          // Sliver para los Artículos
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                // Alternamos entre el PostCard y el divisor.
+                if (index.isOdd) {
+                  return _articleDivider();
+                }
+
+                // El índice de los artículos se calcula dividiendo el índice por 2
+                final postIndex = index ~/ 2;
+                final post = blogPosts[postIndex];
+
+                return PostCard(
+                  title: post['title']!,
+                  author: post['author']!,
+                  date: post['date']!,
+                  fullContent: post['fullContent']!,
+                  imageUrl: post['imageUrl']!,
+                  commentsCount: post['comments'],
+                  likesCount: post['likes'],
+                  initialComments: post['initialComments'],
+                );
+              },
+              // El número de elementos es el doble de los posts menos 1 (para los divisores)
+              childCount: blogPosts.length * 2 - 1,
+            ),
+          ),
+        ],
       ),
     );
   }
