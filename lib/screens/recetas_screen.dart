@@ -115,6 +115,8 @@ class Recetas extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
+          titleSpacing: 20.0,
+          toolbarHeight: 61.0,
           // Cambios para alinear a la izquierda y hacer bold el título
           title: const Text(
             "Recetas",
