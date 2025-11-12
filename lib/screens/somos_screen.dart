@@ -322,170 +322,163 @@ class SomosScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Utilizamos un CustomScrollView para el AppBar con Back Button y el contenido
-      body: CustomScrollView(
-        slivers: <Widget>[
-          // AppBar personalizada con flecha de regreso
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            automaticallyImplyLeading:
-                false, // Evita el botón de regreso automático por defecto
-            expandedHeight: 0, // Altura estándar para un AppBar normal
-            pinned: true, // Se queda fijo en la parte superior
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back,
-                size: 30,
-                color: _unselectedDarkColor,
-              ),
-              // Al presionar, vuelve a la pantalla anterior
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: const Text(
-              "Compra consciente, vive sostenible",
-              style: TextStyle(
-                color: _unselectedDarkColor,
-                fontSize: 20,
-                fontFamily: "roboto",
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            centerTitle: false,
-            titleSpacing: 0.0,
+      // 1. REEMPLAZAMOS CustomScrollView con AppBar estándar
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false, // Alineación a la izquierda como en Ubicaciones
+        titleSpacing: 0.0, // Espaciado mínimo como en Ubicaciones
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            size: 30,
+            color: _unselectedDarkColor,
           ),
-
-          // Contenido principal de la pantalla
-          SliverList(
-            delegate: SliverChildListDelegate([
-              // Contenedor principal para padding
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const SizedBox(height: 10),
-
-                    // Imagen Principal (Contaminación por Plástico/Océano)
-                    const _MainImage(
-                      imageAsset: 'assets/images/plasticos-en-mar.jpg',
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Texto de introducción
-                    const Text(
-                      "Creemos que cada pequeña elección puede generar un gran"
-                      " impacto. Nos especializamos en la venta de alimentos a"
-                      " granel, ofreciendo productos frescos y de alta calidad"
-                      " sin empaques innecesarios. Nuestro objetivo es brindar"
-                      " una alternativa de consumo más sostenible, accesible y"
-                      " saludable para todas las personas que desean reducir"
-                      " desperdicios y hacer compras responsables.",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: "roboto",
-                        color: _unselectedDarkColor,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
-              const Divider(
-                color: Color.fromRGBO(224, 224, 224, 100),
-                height: 50,
-                thickness: 5,
-                indent: 0,
-                endIndent: 0,
-              ),
-
-              // Contenido con el padding horizontal de 22.0
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // 2. Nuestra Historia
-                    const _SectionHeader(title: "Nuestra Historia"),
-                    const _HistoryContent(),
-                  ],
-                ),
-              ),
-
-              // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
-              const Divider(
-                color: Color.fromRGBO(224, 224, 224, 100),
-                height: 50,
-                thickness: 5,
-                indent: 0,
-                endIndent: 0,
-              ),
-
-              // Contenido con el padding horizontal de 22.0
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // 3. Nuestra Misión
-                    const _SectionHeader(title: "Nuestra Misión"),
-                    const _MissionContent(),
-                  ],
-                ),
-              ),
-
-              // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
-              const Divider(
-                color: Color.fromRGBO(224, 224, 224, 100),
-                height: 50,
-                thickness: 5,
-                indent: 0,
-                endIndent: 0,
-              ),
-
-              // Contenido con el padding horizontal de 22.0
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // 4. Nuestros Valores
-                    const _SectionHeader(title: "Nuestros Valores"),
-                    const _ValuesContent(),
-
-                    // Separador y Texto Final
-                    const SizedBox(height: 20),
-                    const Text(
-                      "¡Gracias por ser parte de este movimiento sostenible!",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: _primaryGreen,
-                        fontSize: 16,
-                        fontFamily: "roboto",
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Barra de Reacciones (CENTRADA)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: _ReactionBar(
-                        initialLikes: _simulatedLikes,
-                        commentsCount: _simulatedComments.length,
-                        postTitle: "Compra consciente, vive sostenible",
-                        initialComments: _simulatedComments,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ),
-              ),
-            ]),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          "Compra consciente, vive sostenible",
+          style: TextStyle(
+            color: _unselectedDarkColor,
+            fontSize: 20,
+            fontFamily: "roboto",
+            fontWeight: FontWeight.bold,
           ),
-        ],
+        ),
+      ),
+
+      // 2. REEMPLAZAMOS CustomScrollView con SingleChildScrollView
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Contenedor principal para padding
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 10),
+
+                  // Imagen Principal (Contaminación por Plástico/Océano)
+                  const _MainImage(
+                    imageAsset: 'assets/images/plasticos-en-mar.jpg',
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Texto de introducción
+                  const Text(
+                    "Creemos que cada pequeña elección puede generar un gran"
+                    " impacto. Nos especializamos en la venta de alimentos a"
+                    " granel, ofreciendo productos frescos y de alta calidad"
+                    " sin empaques innecesarios. Nuestro objetivo es brindar"
+                    " una alternativa de consumo más sostenible, accesible y"
+                    " saludable para todas las personas que desean reducir"
+                    " desperdicios y hacer compras responsables.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: "roboto",
+                      color: _unselectedDarkColor,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
+            const Divider(
+              color: Color.fromRGBO(224, 224, 224, 100),
+              height: 50,
+              thickness: 5,
+              indent: 0,
+              endIndent: 0,
+            ),
+
+            // Contenido con el padding horizontal de 22.0
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // 2. Nuestra Historia
+                  const _SectionHeader(title: "Nuestra Historia"),
+                  const _HistoryContent(),
+                ],
+              ),
+            ),
+
+            // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
+            const Divider(
+              color: Color.fromRGBO(224, 224, 224, 100),
+              height: 50,
+              thickness: 5,
+              indent: 0,
+              endIndent: 0,
+            ),
+
+            // Contenido con el padding horizontal de 22.0
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // 3. Nuestra Misión
+                  const _SectionHeader(title: "Nuestra Misión"),
+                  const _MissionContent(),
+                ],
+              ),
+            ),
+
+            // DIVISOR MODIFICADO (Ocupa todo el ancho sin padding)
+            const Divider(
+              color: Color.fromRGBO(224, 224, 224, 100),
+              height: 50,
+              thickness: 5,
+              indent: 0,
+              endIndent: 0,
+            ),
+
+            // Contenido con el padding horizontal de 22.0
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // 4. Nuestros Valores
+                  const _SectionHeader(title: "Nuestros Valores"),
+                  const _ValuesContent(),
+
+                  // Separador y Texto Final
+                  const SizedBox(height: 20),
+                  const Text(
+                    "¡Gracias por ser parte de este movimiento sostenible!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _primaryGreen,
+                      fontSize: 16,
+                      fontFamily: "roboto",
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Barra de Reacciones (CENTRADA)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: _ReactionBar(
+                      initialLikes: _simulatedLikes,
+                      commentsCount: _simulatedComments.length,
+                      postTitle: "Compra consciente, vive sostenible",
+                      initialComments: _simulatedComments,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+// 1. IMPORTAR la pantalla de privacidad
+import 'privacidad_screen.dart'; // Asegúrate de que esta ruta sea correcta
+// 1. AÑADIDO: Importar la pantalla de términos y condiciones
+import 'condiciones_screen.dart'; // ¡Asegúrate de que esta ruta sea correcta!
 
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _primaryGreen = Color(0xFF4CAF50);
@@ -71,12 +75,17 @@ class _ProfileOptionRow extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final EdgeInsets padding;
+
+  const _SectionHeader({
+    required this.title,
+    this.padding = const EdgeInsets.fromLTRB(18.0, 24.0, 18.0, 8.0),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18.0, 24.0, 18.0, 8.0),
+      padding: padding,
       child: Text(
         title,
         style: const TextStyle(
@@ -93,10 +102,34 @@ class _SectionHeader extends StatelessWidget {
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
 
+  // Función genérica para manejo de taps
   void _handleTap(BuildContext context, String action) {
+    // 2. CORRECCIÓN: Se mantiene el Snackbar para otras opciones
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Acción: $action')));
+  }
+
+  // Función específica para navegar a la Política de Privacidad
+  void _navigateToPrivacyPolicy(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const PrivacidadScreen(), // Usamos la clase importada
+      ),
+    );
+  }
+
+  // 2. AÑADIDO: Función específica para navegar a Términos y Condiciones
+  void _navigateToTerms(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const CondicionesScreen(), // Usamos la clase importada
+      ),
+    );
   }
 
   @override
@@ -132,35 +165,36 @@ class PerfilScreen extends StatelessWidget {
               onTap: () => _handleTap(context, 'Mis pedidos'),
             ),
 
-            const Divider(height: 30, thickness: 1, color: Color(0xFFE0E0E0)),
-
-            const _SectionHeader(title: "Preferencias"),
-            _ProfileOptionRow(
-              title: "Idioma",
-              icon: Icons.language,
-              subtitle: "Español",
-              onTap: () => _handleTap(context, 'Cambiar Idioma'),
+            const Divider(
+              color: Color.fromRGBO(224, 224, 224, 1.0),
+              height: 50,
+              thickness: 5,
+              indent: 0,
+              endIndent: 0,
             ),
 
-            const Divider(height: 30, thickness: 1, color: Color(0xFFE0E0E0)),
-
-            const _SectionHeader(title: "Soporte"),
+            const _SectionHeader(
+              title: "Soporte",
+              padding: EdgeInsets.fromLTRB(18.0, 16.0, 18.0, 8.0),
+            ),
+            // Llama a la función de navegación para Privacidad
             _ProfileOptionRow(
               title: "Política de Privacidad",
               icon: Icons.check_box_outlined,
               subtitle: "Prácticas de privacidad",
-              onTap: () => _handleTap(context, 'Política de Privacidad'),
+              onTap: () => _navigateToPrivacyPolicy(context),
             ),
+            // LLAMA A LA NUEVA FUNCIÓN DE NAVEGACIÓN PARA TÉRMINOS
             _ProfileOptionRow(
               title: "Términos y condiciones",
               icon: Icons.description_outlined,
               subtitle: "Lea los términos que acepta al usar la aplicación",
-              onTap: () => _handleTap(context, 'Términos y condiciones'),
+              onTap: () => _navigateToTerms(context), // <--- CAMBIO CLAVE AQUÍ
             ),
 
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 18.0,
+                horizontal: 20.0,
                 vertical: 24.0,
               ),
               child: SizedBox(
@@ -201,7 +235,7 @@ class _ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18.0, 16.0, 18.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 18.0, 0.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -213,7 +247,6 @@ class _ProfileHeader extends StatelessWidget {
                 child: const Icon(Icons.person, size: 40, color: _primaryGreen),
               ),
               const SizedBox(width: 12),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
