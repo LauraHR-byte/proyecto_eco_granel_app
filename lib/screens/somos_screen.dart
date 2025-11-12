@@ -368,7 +368,7 @@ class SomosScreen extends StatelessWidget {
 
                     // Imagen Principal (Contaminación por Plástico/Océano)
                     const _MainImage(
-                      imageAsset: 'assets/images/plasticos-mar.jpg',
+                      imageAsset: 'assets/images/plasticos-en-mar.jpg',
                     ),
                     const SizedBox(height: 15),
 

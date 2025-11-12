@@ -196,7 +196,7 @@ class _DesayunosTab extends StatelessWidget {
           title: "Pudding de Chía y Cúrcuma",
           description:
               "Este pudding es una opción nutritiva y fácil de preparar, cargada de antioxidantes y grasas saludables.",
-          imageUrl: "assets/images/chia_curcuma.jpg",
+          imageUrl: "assets/images/pudin.jpg",
         ),
         RecetaCard(
           title: "Avena Cremosa con Frutas y Semillas",

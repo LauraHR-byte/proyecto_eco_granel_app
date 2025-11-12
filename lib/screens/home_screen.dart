@@ -111,7 +111,7 @@ class _DiscoverSection extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
                 // Botón de Llamada a la Acción (CTA)
                 Align(
                   alignment: Alignment.centerLeft,
@@ -351,7 +351,7 @@ class _AboutUsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -364,7 +364,7 @@ class _AboutUsSection extends StatelessWidget {
               color: _unselectedDarkColor,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Imagen "Quiénes Somos"
           Center(
@@ -393,7 +393,7 @@ class _AboutUsSection extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 8),
 
           Container(
             padding: const EdgeInsets.all(6.0),
@@ -414,7 +414,7 @@ class _AboutUsSection extends StatelessWidget {
                     color: _unselectedDarkColor,
                   ),
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 8),
                 Text(
                   "Te invitamos a comprar solo la cantidad que necesitas, reduciendo el desperdicio"
                   "y el impacto ambiental. Más que una tienda, somos un espacio que inspira a vivir"

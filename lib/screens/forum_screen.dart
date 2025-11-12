@@ -698,7 +698,7 @@ Si notas que algunos frutos secos han perdido su crocancia, tuéstalos unos minu
 
 \n\nTus compras a granel se mantendrán frescas y deliciosas por más tiempo. **¡Empieza a organizar tu despensa de forma eficiente y ecológica!**
 ''',
-      'imageUrl': 'assets/images/conservar.jpg',
+      'imageUrl': 'assets/images/vidrio.jpg',
       'comments': 1,
       'likes': 58,
       'initialComments': [

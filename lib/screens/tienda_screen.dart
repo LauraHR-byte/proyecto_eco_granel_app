@@ -51,7 +51,7 @@ class _ProductCard extends StatelessWidget {
       elevation: 2,
 
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
 
         // Aplicar el borde verde si es un producto destacado
         side: product.isFeatured
@@ -165,7 +165,7 @@ final List<Product> _products = [
   Product(
     name: "Avena en Hojuelas",
 
-    imagePath: 'assets/images/granola.jpg',
+    imagePath: 'assets/images/avena-hojuelas.jpg',
 
     price: "\$750 COP",
 
@@ -177,7 +177,7 @@ final List<Product> _products = [
   Product(
     name: "Harina de Almendra",
 
-    imagePath: 'assets/images/granola.jpg',
+    imagePath: 'assets/images/harina-almendras.jpg',
 
     price: "\$5.600 COP",
 
@@ -187,7 +187,7 @@ final List<Product> _products = [
   Product(
     name: "Semillas de Chía",
 
-    imagePath: 'assets/images/granola.jpg',
+    imagePath: 'assets/images/chia.jpg',
 
     price: "\$3.700 COP",
 
@@ -195,9 +195,9 @@ final List<Product> _products = [
   ),
 
   Product(
-    name: "Almendras Tostadas",
+    name: "Almendras",
 
-    imagePath: 'assets/images/granola.jpg',
+    imagePath: 'assets/images/almendras.jpg',
 
     price: "\$4.650 COP",
 
@@ -207,7 +207,7 @@ final List<Product> _products = [
   Product(
     name: "Canela en Polvo",
 
-    imagePath: 'assets/images/granola.jpg',
+    imagePath: 'assets/images/canela-polvo.jpg',
 
     price: "\$1.800 COP",
 
@@ -217,9 +217,19 @@ final List<Product> _products = [
   Product(
     name: "Arroz Integral",
 
-    imagePath: 'assets/images/granola.jpg',
+    imagePath: 'assets/images/arroz-integral.jpg',
 
     price: "\$800 COP",
+
+    weight: "50g",
+  ),
+
+  Product(
+    name: "Garbanzos",
+
+    imagePath: 'assets/images/garbanzos.jpg',
+
+    price: "\$400 COP",
 
     weight: "50g",
   ),
