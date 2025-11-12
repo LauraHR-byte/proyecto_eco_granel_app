@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eco_granel_app/screens/somos_screen.dart';
-// **PASO 1: Importar la nueva pantalla de Ubicaciones**
+// PASO 1: Importar la nueva pantalla de Ubicaciones
 import 'package:eco_granel_app/screens/ubicaciones_screen.dart';
 // Asegúrate de que la ruta sea correcta
 
@@ -49,7 +49,7 @@ class HomeScreen extends StatelessWidget {
 // -----------------------------------------------------
 // --- 1. Seccion Descubre (Banner Principal) ---
 // -----------------------------------------------------
-// **AJUSTE: _DiscoverSection ahora acepta el callback de navegación**
+// AJUSTE: _DiscoverSection ahora acepta el callback de navegación
 class _DiscoverSection extends StatelessWidget {
   final Function(int) onNavigate;
 
@@ -115,7 +115,7 @@ class _DiscoverSection extends StatelessWidget {
                 // Botón de Llamada a la Acción (CTA)
                 Align(
                   alignment: Alignment.centerLeft,
-                  // **AJUSTE: Pasamos la acción de navegación al botón**
+                  // AJUSTE: Pasamos la acción de navegación al botón
                   child: _CtaButton(
                     label: "Ver Ubicaciones",
                     // Implementamos la navegación a la nueva pantalla aquí
@@ -139,7 +139,7 @@ class _DiscoverSection extends StatelessWidget {
 }
 
 // Botón de Llamada a la Acción (Reutilizable)
-// **AJUSTE: El botón ahora recibe un VoidCallback para la acción**
+// AJUSTE: El botón ahora recibe un VoidCallback para la acción
 class _CtaButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed; // Nuevo callback para la acción del botón
@@ -149,7 +149,7 @@ class _CtaButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      // **AJUSTE: Usamos el callback onPressed recibido**
+      // AJUSTE: Usamos el callback onPressed recibido
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: _primaryGreen,
@@ -173,7 +173,6 @@ class _CtaButton extends StatelessWidget {
 // ----------------------------------------------------------------------
 // --- 2. Seccion Productos Destacados (Scroll Horizontal) ---
 // ----------------------------------------------------------------------
-// (código de _FeaturedProductsSection, _ProductCard y _AboutUsSection)
 class _FeaturedProductsSection extends StatelessWidget {
   final Function(int) onNavigate;
 
@@ -182,25 +181,30 @@ class _FeaturedProductsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Lista de datos simulada para productos
+    // Los datos de la home ahora incluyen el peso para un diseño unificado
     const List<Map<String, String>> products = [
       {
         'name': 'Avena en Hojuelas',
-        'price': '\$750 COP / 50g',
+        'price': '\$750 COP',
+        'weight': '50g', // Agregamos peso
         'imagePath': 'assets/images/avena-hojuelas.jpg',
       },
       {
         'name': 'Harina de Almendra',
-        'price': '\$5.600 COP / 50g',
+        'price': '\$5.600 COP',
+        'weight': '50g', // Agregamos peso
         'imagePath': 'assets/images/harina-de-almendras.jpg',
       },
       {
         'name': 'Semillas de Chía',
-        'price': '\$1.400 COP / 20g',
+        'price': '\$1.400 COP',
+        'weight': '20g', // Agregamos peso
         'imagePath': 'assets/images/chia.jpg',
       },
       {
         'name': 'Garbanzos',
-        'price': '\$400 COP / 50g',
+        'price': '\$400 COP',
+        'weight': '50g', // Agregamos peso
         'imagePath': 'assets/images/garbanzos.jpg',
       },
     ];
@@ -222,17 +226,21 @@ class _FeaturedProductsSection extends StatelessWidget {
         ),
         // Lista horizontal de productos
         SizedBox(
-          height: 220, // Altura fija para el scroll horizontal
+          // La altura debe ajustarse para el nuevo diseño de tarjeta unificada
+          height: 250,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
-              return _ProductCard(
+              // **AJUSTE: Usamos el nuevo widget _ProductCardUnified**
+              return _ProductCardUnified(
                 name: product['name']!,
                 price: product['price']!,
+                weight: product['weight']!, // Pasamos el peso
                 imagePath: product['imagePath']!,
                 isFirst: index == 0,
+                // El onTap navega a la tienda (índice 2)
                 onTap: () => onNavigate(2),
               );
             },
@@ -243,99 +251,116 @@ class _FeaturedProductsSection extends StatelessWidget {
   }
 }
 
-// ProductCard debe recibir el onTap y usarlo
-class _ProductCard extends StatelessWidget {
+// -------------------------------------------------------------------
+// --- NUEVO Componente de Tarjeta de Producto Unificado (Home) ---
+// -------------------------------------------------------------------
+// Basado en el diseño de TiendaScreen, pero sin el botón '+' y con InkWell
+class _ProductCardUnified extends StatelessWidget {
   final String name;
   final String price;
+  final String weight; // Nuevo: Para unificar el diseño de precio/peso
   final String imagePath;
   final bool isFirst;
-  final VoidCallback onTap; // Propiedad para el callback
+  final VoidCallback onTap;
 
-  const _ProductCard({
+  const _ProductCardUnified({
     required this.name,
     required this.price,
+    required this.weight,
     required this.imagePath,
     this.isFirst = false,
-    required this.onTap, // Requerimos el callback
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Ejecuta la navegación (cambio de índice) al hacer tap
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 150,
-        margin: EdgeInsets.only(
-          left: isFirst ? 18.0 : 8.0,
-          right: 8.0,
-          bottom: 10.0,
+    // Usamos Card y InkWell para replicar el diseño y animación de TiendaScreen
+    return Container(
+      height: 50,
+      width: 150, // Mantenemos el ancho del Producto Destacado
+      margin: EdgeInsets.only(
+        left: isFirst ? 18.0 : 3.0,
+        right: 8.0,
+        bottom: 10.0,
+      ),
+      child: Card(
+        elevation: 2, // Mantenemos la elevación del Card de TiendaScreen
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            12,
+          ), // Radio del Card de TiendaScreen
+          side: BorderSide.none,
         ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: _unselectedDarkColor,
-              blurRadius: 3,
-              offset: Offset(0, 0),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // **CORRECCIÓN 2.1: Implementación de Image.asset para mostrar la imagen**
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: Image.asset(
-                imagePath, // Usa la ruta del producto
-                height: 120,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 120,
-                  // CORREGIDO: Usando .withAlpha(25) en caso de error
-                  color: _primaryGreen.withAlpha(25),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported,
-                    color: _primaryGreen,
+        child: InkWell(
+          onTap: onTap, // Acción al hacer tap
+          borderRadius: BorderRadius.circular(
+            12,
+          ), // Radio para el efecto de InkWell
+          child: Padding(
+            padding: const EdgeInsets.only(
+              bottom: 8.0,
+            ), // Padding inferior para el contenido
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Imagen del Producto:
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: Image.asset(
+                    imagePath,
+                    height: 130, // Altura ajustada para el nuevo diseño
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    // Manejo de error de imagen (mantenido)
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 120,
+                      color: _primaryGreen.withAlpha(25),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.image_not_supported,
+                        color: _primaryGreen,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontFamily: "roboto",
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+
+                // 2. Información del Producto (Nombre y Precio/Peso)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8.0, 12.0, 8.0, 4.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment
+                        .center, // Centramos el texto como en TiendaScreen
+                    children: [
+                      Text(
+                        name,
+                        textAlign: TextAlign.center, // Alineación del texto
+                        style: const TextStyle(
+                          fontSize: 15, // Tamaño de TiendaScreen
+                          fontWeight: FontWeight.bold,
+                          color: _unselectedDarkColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$price / $weight', // Formato de precio unificado
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: _primaryGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    price,
-                    style: const TextStyle(
-                      color: _primaryGreen,
-                      fontFamily: "roboto",
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
