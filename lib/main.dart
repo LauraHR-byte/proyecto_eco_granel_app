@@ -1,16 +1,33 @@
+// ** CAMBIOS PARA FIREBASE **
+// 1. Importaciones necesarias para Firebase
+import 'package:firebase_core/firebase_core.dart';
+import 'package:eco_granel_app/firebase_options.dart';
+import 'package:flutter/material.dart';
+
+// Importaciones de tus pantallas
 import 'package:eco_granel_app/screens/forum_screen.dart';
 import 'package:eco_granel_app/screens/home_screen.dart';
 import 'package:eco_granel_app/screens/perfil_screen.dart';
 import 'package:eco_granel_app/screens/recetas_screen.dart';
 import 'package:eco_granel_app/screens/carrito_screen.dart';
 import 'package:eco_granel_app/screens/tienda_screen.dart';
-import 'package:flutter/material.dart';
 
 // Color verde para el tema
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF424242);
 
-void main() => runApp(const MyApp());
+// ** FUNCIÓN MAIN MODIFICADA **
+void main() async {
+  // Asegura que Flutter esté listo para la inicialización asíncrona (await)
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa Firebase usando las opciones específicas de la plataforma
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Ejecuta la aplicación
+  runApp(const MyApp());
+}
+// ** FIN FUNCIÓN MAIN MODIFICADA **
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
