@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eco_granel_app/login/inicio_screen.dart'; // Asegúrate de que esta ruta es correcta
 // 1. IMPORTAR la pantalla de privacidad
 import 'privacidad_screen.dart'; // Asegúrate de que esta ruta sea correcta
 // 1. AÑADIDO: Importar la pantalla de términos y condiciones
@@ -110,6 +111,18 @@ class PerfilScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text('Acción: $action')));
   }
 
+  // AÑADIDO: Función específica para cerrar sesión y navegar
+  void _logout(BuildContext context) {
+    // Aquí se debería implementar la lógica real de cerrar sesión (ej. eliminar token)
+
+    // Navegar a InicioScreen y remover todas las rutas anteriores
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const InicioScreen()),
+      (Route<dynamic> route) => false, // Predicado para remover todas las rutas
+    );
+  }
+
   // Función específica para navegar a la Política de Privacidad
   void _navigateToPrivacyPolicy(BuildContext context) {
     Navigator.push(
@@ -200,7 +213,8 @@ class PerfilScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => _handleTap(context, 'Cerrar Sesión'),
+                  // *** CAMBIO CLAVE: Llamar a la nueva función _logout ***
+                  onPressed: () => _logout(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _orangeColor,
                     foregroundColor: Colors.white,
