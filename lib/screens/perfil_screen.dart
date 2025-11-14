@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:eco_granel_app/login/inicio_screen.dart'; // Asegúrate de que esta ruta es correcta
-// 1. IMPORTAR la pantalla de privacidad
-import 'privacidad_screen.dart'; // Asegúrate de que esta ruta sea correcta
-// 1. AÑADIDO: Importar la pantalla de términos y condiciones
-import 'condiciones_screen.dart'; // ¡Asegúrate de que esta ruta sea correcta!
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Asegúrate de que estas rutas son correctas en tu proyecto
+import 'package:eco_granel_app/login/inicio_screen.dart';
+import 'privacidad_screen.dart';
+import 'condiciones_screen.dart';
 
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _orangeColor = Color(0xFFC76939);
+
+// --- Componentes Reutilizables ---
 
 class _ProfileOptionRow extends StatelessWidget {
   final String title;
@@ -100,48 +104,183 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class PerfilScreen extends StatelessWidget {
+// ----------------------------------------------------------------------
+// PERFIL SCREEN (Contiene la lógica de navegación y cierre de sesión)
+// ----------------------------------------------------------------------
+
+class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
 
-  // Función genérica para manejo de taps
+  @override
+  State<PerfilScreen> createState() => _PerfilScreenState();
+}
+
+class _PerfilScreenState extends State<PerfilScreen> {
   void _handleTap(BuildContext context, String action) {
-    // 2. CORRECCIÓN: Se mantiene el Snackbar para otras opciones
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Acción: $action')));
   }
 
-  // AÑADIDO: Función específica para cerrar sesión y navegar
-  void _logout(BuildContext context) {
-    // Aquí se debería implementar la lógica real de cerrar sesión (ej. eliminar token)
+  // Lógica de cierre de sesión con Firebase Auth
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navegar a InicioScreen y remover todas las rutas anteriores
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const InicioScreen()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cerrar sesión: $e')));
+      }
+    }
+  }
 
-    // Navegar a InicioScreen y remover todas las rutas anteriores
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const InicioScreen()),
-      (Route<dynamic> route) => false, // Predicado para remover todas las rutas
+  // FUNCIÓN PARA MOSTRAR EL DIÁLOGO DE CONFIRMACIÓN CON ESTILO DE PROTOTIPO
+  void _confirmLogout() {
+    // Usamos showGeneralDialog para tener control total sobre el fondo oscuro
+    showGeneralDialog(
+      context: context,
+      barrierColor: Colors.black.withAlpha(
+        120,
+      ), // Color de fondo oscuro (50% opacidad)
+      barrierDismissible: false, // El usuario debe seleccionar una opción
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, anim1, anim2) {
+        return Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 330),
+            padding: const EdgeInsets.all(30.0),
+            decoration: BoxDecoration(
+              color: Colors.grey[700],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                const Text(
+                  "¿Salir de tu cuenta?",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "roboto",
+                    color: Colors.white,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    // ------------------------------------------------
+                    // Botón Salir (Fondo Blanco, Overlay Naranja)
+                    // ------------------------------------------------
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Cierra el diálogo y luego ejecuta el logout
+                          Navigator.of(context).pop();
+                          _logout();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          // Fondo por defecto: BLANCO
+                          backgroundColor: Colors.white,
+                          // Color del texto por defecto: GRIS
+                          foregroundColor: Colors.grey,
+                          // Color al presionar: NARANJA (con opacidad para el efecto 'tap')
+                          overlayColor: _orangeColor.withAlpha(255),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            // Borde sutil del botón
+                            side: const BorderSide(
+                              color: Colors.grey,
+                              width: 1,
+                            ),
+                          ),
+                          elevation:
+                              0, // Quitamos la elevación para que parezca más plano
+                        ),
+                        child: const Text(
+                          "Salir",
+                          style: TextStyle(
+                            fontFamily: "roboto",
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: _unselectedDarkColor, // Texto oscuro
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // ------------------------------------------------
+                    // Botón Cancelar (Fondo Blanco, Overlay Naranja)
+                    // ------------------------------------------------
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Solo cierra el diálogo
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          // Fondo por defecto: BLANCO
+                          backgroundColor: Colors.white,
+                          // Color del texto por defecto: GRIS
+                          foregroundColor: Colors.grey,
+                          // Color al presionar: NARANJA (con opacidad para el efecto 'tap')
+                          overlayColor: _orangeColor.withAlpha(255),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            // Borde sutil del botón
+                            side: const BorderSide(
+                              color: Colors.grey,
+                              width: 1,
+                            ),
+                          ),
+                          elevation:
+                              0, // Quitamos la elevación para que parezca más plano
+                        ),
+                        child: Text(
+                          "Cancelar",
+                          style: TextStyle(
+                            fontFamily: "roboto",
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color:
+                                _unselectedDarkColor, // Mantenemos el texto naranja para resaltarlo
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  // Función específica para navegar a la Política de Privacidad
-  void _navigateToPrivacyPolicy(BuildContext context) {
+  void _navigateToPrivacyPolicy() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const PrivacidadScreen(), // Usamos la clase importada
-      ),
+      MaterialPageRoute(builder: (context) => const PrivacidadScreen()),
     );
   }
 
-  // 2. AÑADIDO: Función específica para navegar a Términos y Condiciones
-  void _navigateToTerms(BuildContext context) {
+  void _navigateToTerms() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const CondicionesScreen(), // Usamos la clase importada
-      ),
+      MaterialPageRoute(builder: (context) => const CondicionesScreen()),
     );
   }
 
@@ -159,6 +298,7 @@ class PerfilScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // El encabezado ahora se encarga de cargar los datos del usuario
             const _ProfileHeader(),
 
             const _SectionHeader(title: "Tu actividad"),
@@ -190,19 +330,17 @@ class PerfilScreen extends StatelessWidget {
               title: "Soporte",
               padding: EdgeInsets.fromLTRB(18.0, 16.0, 18.0, 8.0),
             ),
-            // Llama a la función de navegación para Privacidad
             _ProfileOptionRow(
               title: "Política de Privacidad",
               icon: Icons.check_box_outlined,
               subtitle: "Prácticas de privacidad",
-              onTap: () => _navigateToPrivacyPolicy(context),
+              onTap: _navigateToPrivacyPolicy,
             ),
-            // LLAMA A LA NUEVA FUNCIÓN DE NAVEGACIÓN PARA TÉRMINOS
             _ProfileOptionRow(
               title: "Términos y condiciones",
               icon: Icons.description_outlined,
               subtitle: "Lea los términos que acepta al usar la aplicación",
-              onTap: () => _navigateToTerms(context), // <--- CAMBIO CLAVE AQUÍ
+              onTap: _navigateToTerms,
             ),
 
             Padding(
@@ -213,8 +351,8 @@ class PerfilScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  // *** CAMBIO CLAVE: Llamar a la nueva función _logout ***
-                  onPressed: () => _logout(context),
+                  //LLAMAR A LA FUNCIÓN DE CONFIRMACIÓN
+                  onPressed: _confirmLogout,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _orangeColor,
                     foregroundColor: Colors.white,
@@ -243,8 +381,80 @@ class PerfilScreen extends StatelessWidget {
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
+// ----------------------------------------------------------------------
+// PROFILE HEADER (Contiene la lógica de carga de datos de Firestore)
+// ----------------------------------------------------------------------
+
+class _ProfileHeader extends StatefulWidget {
   const _ProfileHeader();
+
+  @override
+  State<_ProfileHeader> createState() => _ProfileHeaderState();
+}
+
+class _ProfileHeaderState extends State<_ProfileHeader> {
+  String _displayName = 'Cargando...';
+  String _username = '@cargando';
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // Función para cargar datos del usuario desde Firebase/Firestore
+  Future<void> _loadUserData() async {
+    _currentUser = FirebaseAuth.instance.currentUser;
+
+    if (_currentUser != null) {
+      final uid = _currentUser!.uid;
+
+      try {
+        // Accede a la colección 'users' con el UID del usuario
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+
+        if (doc.exists) {
+          final data = doc.data();
+          setState(() {
+            // Lee 'fullName' (Nombre y Apellido) de Firestore
+            _displayName = data?['fullName'] ?? 'Usuario';
+
+            // Lee 'username' (Alias) de Firestore
+            _username = '@${data?['username'] ?? 'usuario'}';
+          });
+        } else {
+          // Fallback si el documento no existe (usa la información de Auth)
+          setState(() {
+            _displayName = _currentUser!.displayName ?? 'Usuario';
+            _username = '@${_currentUser!.email?.split('@')[0] ?? 'usuario'}';
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          // Muestra un error si la carga falla (ej. problemas de conexión)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error al cargar datos: $e')));
+        }
+      }
+    } else {
+      // Estado si no hay un usuario logueado
+      setState(() {
+        _displayName = 'Invitado';
+        _username = 'Inicia sesión para ver tu perfil';
+      });
+    }
+  }
+
+  void _handleTap(BuildContext context, String action) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Acción: $action')));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,9 +474,9 @@ class _ProfileHeader extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text(
-                    "Anita",
-                    style: TextStyle(
+                  Text(
+                    _displayName, // Muestra el Nombre y Apellido
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -274,7 +484,7 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    "@anita_ambientalista",
+                    _username, // Muestra el Alias/Usuario
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: "roboto",
@@ -308,11 +518,5 @@ class _ProfileHeader extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  void _handleTap(BuildContext context, String action) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Acción: $action')));
   }
 }

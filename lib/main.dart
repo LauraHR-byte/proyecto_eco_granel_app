@@ -14,7 +14,7 @@ import 'package:eco_granel_app/screens/tienda_screen.dart';
 
 // Color verde para el tema
 const Color _primaryGreen = Color(0xFF4CAF50);
-const Color _unselectedDarkColor = Color(0xFF424242);
+const Color _unselectedDarkColor = Color(0xFF333333);
 
 // ** FUNCIÓN MAIN MODIFICADA **
 void main() async {

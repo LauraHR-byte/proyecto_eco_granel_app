@@ -1,18 +1,13 @@
 import 'package:eco_granel_app/login/inicio_screen.dart';
+import 'package:eco_granel_app/login/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Importa las pantallas necesarias para la navegación, como la pantalla principal (EcoGranel).
 import 'package:eco_granel_app/main.dart'; // Asume que EcoGranel está en main.dart
 
-// Definición de colores basada en el main.dart
 const Color _primaryGreen = Color(0xFF4CAF50);
-const Color _unselectedDarkColor = Color(0xFF424242);
-const Color _primaryOrange = Color.fromRGBO(
-  184,
-  94,
-  44,
-  1,
-); // Color del carrito en AppBar
+const Color _unselectedDarkColor = Color(0xFF333333);
+const Color _orangeColor = Color(0xFFC76939);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -88,14 +83,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Simulación de navegación a la pantalla de Registro
+  // >>> INICIO DEL CAMBIO: Navegación real a RegisterScreen
   void _goToSignUp() {
-    // Implementar la navegación a la pantalla de registro (por ejemplo, RegisterScreen)
-    // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navegar a la pantalla de registro')),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const RegisterScreen()));
   }
+  // <<< FIN DEL CAMBIO
 
   // Simulación de navegación a la pantalla de Olvidé mi Contraseña
   void _forgotPassword() {
@@ -115,10 +109,19 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text(
           'Iniciar Sesión',
-          style: TextStyle(color: _unselectedDarkColor),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            fontFamily: "roboto",
+            color: _unselectedDarkColor,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _unselectedDarkColor),
+          icon: const Icon(
+            Icons.arrow_back,
+            size: 30,
+            color: _unselectedDarkColor,
+          ),
           onPressed: () =>
               Navigator.of(context).pop(InicioScreen), // O a donde corresponda
         ),
@@ -132,44 +135,33 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 50),
-              // Logo de Eco Granel
+              const SizedBox(height: 10),
+              // Logo de Eco Granel: Se inserta la imagen solicitada.
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Asume que la parte "ECO" es un widget o texto estilizado
-                    const Text(
-                      'ECO',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryGreen,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    // Asume que la parte "Granel" es un widget o texto estilizado
-                    const Text(
-                      'Granel',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryOrange,
-                      ),
-                    ),
-                  ],
+                child: SizedBox(
+                  width: 220, // Aumentado ligeramente el tamaño para el logo
+                  height: 50,
+                  // Se quita el color de fondo para que la imagen del logo se vea limpia
+                  // decoration: BoxDecoration(
+                  //   color: _primaryGreen.withAlpha(26),
+                  //   borderRadius: BorderRadius.circular(20),
+                  // ),
+                  child: Image.asset(
+                    'assets/images/logo_ecogranel.png', // Logo solicitado por el usuario
+                    fit: BoxFit.contain, // Asegura que la imagen se ajuste
+                  ),
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 40),
 
               // Campo de Email/Usuario
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  hintText: 'ej. anitaperez@gmail.com',
+                  hintText: 'Ingresa tu correo electrónico',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -181,13 +173,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa tu correo o usuario.';
+                    return 'Ingresa tu correo electrónico.';
                   }
                   // Validación simple de formato de correo (necesario para signInWithEmailAndPassword)
                   if (!value.contains('@') || !value.contains('.')) {
-                    // Nota: Si quieres aceptar 'usuario' sin '@', tendrías que
-                    // implementar una lógica de mapeo con Firestore/RealtimeDB.
-                    // Por ahora, asumimos que el campo principal es el correo.
                     // return 'Formato de correo inválido.';
                   }
                   return null;
@@ -200,9 +189,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 obscureText: !_showPassword,
                 decoration: InputDecoration(
-                  hintText: '**********',
+                  hintText: 'Ingresa tu contraseña',
                   border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -240,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text(
                     'Olvidé mi contraseña',
                     style: TextStyle(
-                      color: Color(0xFFE53935),
+                      color: _orangeColor,
+                      fontFamily: "roboto",
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -269,7 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   backgroundColor: _primaryGreen,
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                 ),
                 child: _isLoading
@@ -284,7 +274,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     : const Text(
                         'Entrar',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
+                          fontFamily: "roboto",
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -292,15 +283,21 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Enlace ¿No Tienes Cuenta?
+              // Enlace ¿No Tienes Cuenta? - Ajustado para tener subrayado del mismo color
               TextButton(
                 onPressed: _goToSignUp,
                 child: Text(
                   '¿No Tienes Cuenta?',
                   style: TextStyle(
-                    color: _primaryGreen.withAlpha(204),
-                    decoration: TextDecoration.underline,
+                    fontFamily: "roboto",
+                    fontSize: 16,
+                    color: _primaryGreen, // Texto con el color primario
                     fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                    // Subrayado del mismo color del texto
+                    decorationColor: _primaryGreen,
+                    // Aumenta el grosor para que se vea ligeramente más abajo
+                    decorationThickness: 2.0,
                   ),
                 ),
               ),

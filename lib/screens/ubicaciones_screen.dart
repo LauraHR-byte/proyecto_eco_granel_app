@@ -214,32 +214,6 @@ class _UbicacionesScreenState extends State<UbicacionesScreen> {
               ),
             ),
             // Se elimina el Text del 'time' y el IconButton que estaban al lado del Expanded
-
-            // Eliminamos el siguiente bloque para mover la hora y el botón dentro del Expanded
-            /*
-            Text(
-              time,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: _primaryGreen,
-                fontFamily: "roboto",
-              ),
-            ),
-            // Opcional: Agregar un botón para centrar el mapa en la ubicación
-            IconButton(
-              icon: const Icon(
-                Icons.location_on,
-                color: _primaryGreen,
-                size: 40,
-              ),
-              onPressed: () {
-                _mapController?.animateCamera(
-                  CameraUpdate.newLatLngZoom(locationData.coordinates, 15.0),
-                );
-              },
-            ),
-          */
           ],
         ),
       ),
