@@ -1,10 +1,251 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eco_granel_app/screens/recetas_screen.dart';
 
-class RecipeDetail extends StatelessWidget {
-  const RecipeDetail({super.key});
+// Tus colores globales
+const Color _primaryGreen = Color(0xFF4CAF50);
+const Color _unselectedDarkColor = Color(0xFF333333);
+
+// Recibe: objeto Receta (id, title, description, imageUrl, category)
+
+class RecipeDetailScreen extends StatelessWidget {
+  final Receta receta;
+
+  const RecipeDetailScreen({super.key, required this.receta});
 
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(
+      backgroundColor: Colors.white,
+
+      // ---------------- APP BAR ----------------
+      appBar: AppBar(
+        backgroundColor: _primaryGreen,
+        title: Text(
+          receta.title,
+          style: const TextStyle(
+            fontFamily: "roboto",
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+
+      // ---------------- CUERPO ----------------
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('recetas')
+            .doc(receta.id)
+            .get(),
+
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(color: _primaryGreen),
+            );
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+
+          // ARRAYS DESDE FIRESTORE
+          final List ingredients = data['ingredients'] ?? [];
+          final List steps = data['steps'] ?? [];
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // =====================================================
+                // 🖼️ IMAGEN PRINCIPAL
+                // =====================================================
+                Image.network(
+                  receta.imageUrl,
+                  height: 260,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      height: 260,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: CircularProgressIndicator(color: _primaryGreen),
+                      ),
+                    );
+                  },
+                ),
+
+                // =====================================================
+                // 📌 CONTENIDO DETALLADO
+                // =====================================================
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --------------------------------------------------
+                      // TÍTULO
+                      // --------------------------------------------------
+                      Text(
+                        receta.title,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "roboto",
+                          color: _unselectedDarkColor,
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // --------------------------------------------------
+                      // CATEGORÍA
+                      // --------------------------------------------------
+                      Text(
+                        "Categoría: ${receta.category.toUpperCase()}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontFamily: "roboto",
+                          fontWeight: FontWeight.w600,
+                          color: _primaryGreen,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      const Divider(),
+
+                      // --------------------------------------------------
+                      // DESCRIPCIÓN
+                      // --------------------------------------------------
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Descripción:",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "roboto",
+                          color: _unselectedDarkColor,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        receta.description,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontFamily: "roboto",
+                          color: _unselectedDarkColor,
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // INGREDIENTES
+                      // --------------------------------------------------
+                      const SizedBox(height: 30),
+                      const Text(
+                        "Ingredientes:",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "roboto",
+                          color: _unselectedDarkColor,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      ...ingredients.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.check_circle,
+                                color: _primaryGreen,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  item,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    height: 1.4,
+                                    fontFamily: "roboto",
+                                    color: _unselectedDarkColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // PASOS
+                      // --------------------------------------------------
+                      const SizedBox(height: 35),
+
+                      const Text(
+                        "Preparación:",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "roboto",
+                          color: _unselectedDarkColor,
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      ...steps.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        String step = entry.value;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 15,
+                                backgroundColor: _primaryGreen,
+                                child: Text(
+                                  "${index + 1}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: "roboto",
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  step,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    height: 1.4,
+                                    fontFamily: "roboto",
+                                    color: _unselectedDarkColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+
+                      const SizedBox(height: 50),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

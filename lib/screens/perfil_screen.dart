@@ -4,12 +4,39 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Asegúrate de que estas rutas son correctas en tu proyecto
 import 'package:eco_granel_app/login/inicio_screen.dart';
+import 'package:eco_granel_app/screens/edit_profile_screen.dart';
+import 'package:eco_granel_app/screens/guardado_screen.dart';
 import 'privacidad_screen.dart';
 import 'condiciones_screen.dart';
 
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _orangeColor = Color(0xFFC76939);
+
+// ----------------------------------------------------------------------
+// NUEVO: Placeholder para LikesScreen
+// ----------------------------------------------------------------------
+
+class LikesScreen extends StatelessWidget {
+  const LikesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tus Likes'),
+        backgroundColor: _orangeColor,
+      ),
+      body: const Center(
+        child: Text(
+          'Aquí se mostrarán los productos y recetas que te han gustado.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18, color: _unselectedDarkColor),
+        ),
+      ),
+    );
+  }
+}
 
 // --- Componentes Reutilizables ---
 
@@ -116,10 +143,20 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
-  void _handleTap(BuildContext context, String action) {
-    ScaffoldMessenger.of(
+  // Función de navegación para Guardado
+  void _navigateToGuardado() {
+    Navigator.push(
       context,
-    ).showSnackBar(SnackBar(content: Text('Acción: $action')));
+      MaterialPageRoute(builder: (context) => const GuardadoScreen()),
+    );
+  }
+
+  // FUNCIÓN AÑADIDA: Navegación a LikesScreen
+  void _navigateToLikes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LikesScreen()),
+    );
   }
 
   // Lógica de cierre de sesión con Firebase Auth
@@ -255,7 +292,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color:
-                                _unselectedDarkColor, // Mantenemos el texto naranja para resaltarlo
+                                _unselectedDarkColor, // Mantenemos el texto oscuro
                           ),
                         ),
                       ),
@@ -303,19 +340,22 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
             const _SectionHeader(title: "Tu actividad"),
             _ProfileOptionRow(
-              title: "Guardado",
+              title: "Guardados",
               icon: Icons.bookmark_border,
-              onTap: () => _handleTap(context, 'Guardado'),
+              onTap: _navigateToGuardado,
             ),
+            // CAMBIO AQUÍ: Usando la nueva función de navegación _navigateToLikes
             _ProfileOptionRow(
               title: "Likes",
               icon: Icons.favorite_border,
-              onTap: () => _handleTap(context, 'Likes'),
+              onTap: _navigateToLikes,
             ),
             _ProfileOptionRow(
               title: "Mis pedidos",
               icon: Icons.local_shipping_outlined,
-              onTap: () => _handleTap(context, 'Mis pedidos'),
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Navegar a Mis Pedidos')),
+              ),
             ),
 
             const Divider(
@@ -450,10 +490,21 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
     }
   }
 
-  void _handleTap(BuildContext context, String action) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Acción: $action')));
+  // FUNCIÓN DE NAVEGACIÓN A EDITAR PERFIL
+  void _navigateToEditProfile() {
+    if (_currentUser != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const EditarPerfilScreen()),
+      );
+    } else {
+      // Muestra un mensaje si no hay usuario logueado
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes iniciar sesión para editar tu perfil.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -497,7 +548,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () => _handleTap(context, 'Editar Perfil'),
+            onPressed: _navigateToEditProfile,
             style: OutlinedButton.styleFrom(
               foregroundColor: _orangeColor,
               side: const BorderSide(color: _orangeColor),

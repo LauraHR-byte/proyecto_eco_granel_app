@@ -1,35 +1,174 @@
 import 'package:flutter/material.dart';
+// 1. Importaciones necesarias para Firebase (Firestore)
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Definimos el color verde primario para el tema
+// 2. Definimos el color verde primario para el tema
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 
-// --- Componente de la Tarjeta de Receta (RecetaCard) ---
-class RecetaCard extends StatelessWidget {
+// --- 3. Modelo de Datos para Recetas (Receta) ---
+// Este modelo nos ayuda a mapear los documentos de Firestore a objetos Dart.
+class Receta {
+  final String id; // ID del documento en Firestore
   final String title;
   final String description;
-  final String
-  imageUrl; // Ahora apunta a una ruta local (e.g., assets/images/nombre.jpg)
+  final String imageUrl; // URL de la imagen (de Firebase Storage o externa)
+  final String category; // Para filtrar (e.g., 'desayunos', 'snacks')
 
-  const RecetaCard({
-    super.key,
+  Receta({
+    required this.id,
     required this.title,
     required this.description,
     required this.imageUrl,
+    required this.category,
   });
+
+  // Constructor factory para crear una instancia desde un DocumentSnapshot de Firestore
+  factory Receta.fromFirestore(DocumentSnapshot doc) {
+    // Es mejor asegurar que el tipo de datos sea Map<String, dynamic>
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Receta(
+      id: doc.id,
+      title: data['title'] ?? 'Sin título',
+      description: data['description'] ?? 'Sin descripción',
+      imageUrl:
+          data['imageUrl'] ??
+          'assets/images/placeholder.jpg', // Usar URL real o de almacenamiento
+      category: data['category'] ?? 'otros',
+    );
+  }
+}
+
+// ==========================================================
+// ⭐️ PASO 1: Nueva Pantalla de Detalle de Receta
+// ==========================================================
+class RecipeDetailScreen extends StatelessWidget {
+  // Recibe el objeto Receta completo para mostrar sus detalles
+  final Receta receta;
+
+  const RecipeDetailScreen({super.key, required this.receta});
 
   @override
   Widget build(BuildContext context) {
-    // Usamos InkWell para que la tarjeta sea clickeable e incluya el ícono de flecha
+    return Scaffold(
+      appBar: AppBar(title: Text(receta.title), backgroundColor: _primaryGreen),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // Imagen de la receta
+            Image.network(
+              receta.imageUrl,
+              height: 250,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              // Opcional: placeholder para cuando la imagen esté cargando
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 250,
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: _primaryGreen,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    receta.title,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: _unselectedDarkColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Categoría: ${receta.category.toUpperCase()}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: _primaryGreen,
+                    ),
+                  ),
+                  const Divider(height: 32, thickness: 1),
+                  const Text(
+                    "Descripción:",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: _unselectedDarkColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    receta.description,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: _unselectedDarkColor,
+                    ),
+                  ),
+                  // Aquí añadirías más detalles como ingredientes, pasos, etc.
+                  const SizedBox(height: 20),
+                  const Center(
+                    child: Text(
+                      "⭐ ¡Lógica de Ingredientes y Pasos va aquí! ⭐",
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- 4. Componente de la Tarjeta de Receta (RecetaCard) ---
+// Ahora acepta el ID de la receta y la URL de la imagen es remota.
+class RecetaCard extends StatelessWidget {
+  final Receta receta; // Usamos el objeto Receta completo
+  // Aquí podrías agregar un callback para manejar el estado de favorito
+
+  const RecetaCard({super.key, required this.receta});
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
+      // ==========================================================
+      // ⭐️ PASO 2: Lógica de Navegación Añadida
+      // ==========================================================
       onTap: () {
-        // Lógica de navegación o acción al hacer clic en la tarjeta
-        debugPrint('Receta seleccionada: $title');
+        debugPrint('Navegando a detalle de: ${receta.title}');
+        // Navega a la nueva pantalla (RecipeDetailScreen)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            // Le pasamos el objeto 'receta' completo a la pantalla de detalle
+            builder: (context) => RecipeDetailScreen(receta: receta),
+          ),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Card(
-          elevation: 2, // Sombra suave para destacar la tarjeta
+          elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -38,15 +177,16 @@ class RecetaCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                // Contenedor de la Imagen
+                // Contenedor de la Imagen: Ahora carga desde una URL (NetworkImage)
                 Container(
                   height: 100,
                   width: 100,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    // Uso de Image.asset para cargar desde ruta local
                     image: DecorationImage(
-                      image: AssetImage(imageUrl), // Usamos AssetImage
+                      // Usamos NetworkImage si la URL es de Firebase Storage o externa
+                      image: NetworkImage(receta.imageUrl),
+                      // O podrías usar Image.network
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -59,7 +199,7 @@ class RecetaCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        title,
+                        receta.title,
                         style: const TextStyle(
                           fontFamily: "roboto",
                           fontSize: 18,
@@ -68,13 +208,12 @@ class RecetaCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      // Línea de separación verde debajo del título
                       const SizedBox(height: 2),
                       Container(height: 2, width: 100, color: _primaryGreen),
                       const SizedBox(height: 8),
                       Text(
-                        description,
-                        style: TextStyle(
+                        receta.description,
+                        style: const TextStyle(
                           fontFamily: "roboto",
                           fontSize: 12,
                           color: _unselectedDarkColor,
@@ -103,21 +242,21 @@ class RecetaCard extends StatelessWidget {
   }
 }
 
-// --- Componente Principal de Recetas con Pestañas ---
+// --- 5. Componente Principal de Recetas con Pestañas (Se mantiene igual) ---
 class Recetas extends StatelessWidget {
   const Recetas({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Es CRUCIAL que Firebase esté inicializado antes de este punto.
+    // Generalmente se hace en main() o en el widget padre de la aplicación.
     return DefaultTabController(
-      // Número de pestañas: Desayunos, Snacks y Favoritos
       length: 3,
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
           titleSpacing: 20.0,
           toolbarHeight: 61.0,
-          // Cambios para alinear a la izquierda y hacer bold el título
           title: const Text(
             "Recetas",
             style: TextStyle(
@@ -127,7 +266,6 @@ class Recetas extends StatelessWidget {
               color: _unselectedDarkColor,
             ),
           ),
-          // Se quita centerTitle: true para alinearlo a la izquierda
           centerTitle: false,
           elevation: 0,
           bottom: const TabBar(
@@ -156,7 +294,6 @@ class Recetas extends StatelessWidget {
                   ),
                 ),
               ),
-              // Pestaña de Favoritos
               Tab(
                 child: Text(
                   "Favoritos",
@@ -170,80 +307,83 @@ class Recetas extends StatelessWidget {
             ],
           ),
         ),
-        // _FavoritosTab al TabBarView
+        // Las vistas de las pestañas ahora cargan datos de Firestore
         body: const TabBarView(
-          children: [_DesayunosTab(), _SnacksTab(), _FavoritosTab()],
+          children: [
+            _RecetasListTab(category: 'desayunos'),
+            _RecetasListTab(category: 'snacks'),
+            _FavoritosTab(),
+          ],
         ),
       ),
     );
   }
 }
 
-// --- Contenido de la Pestaña DESAYUNOS ---
-class _DesayunosTab extends StatelessWidget {
-  const _DesayunosTab();
+// --- 6. Componente Reutilizable para Pestañas con Carga de Firestore ---
+// Reemplaza _DesayunosTab y _SnacksTab con este widget dinámico.
+class _RecetasListTab extends StatelessWidget {
+  final String category; // 'desayunos' o 'snacks'
+
+  const _RecetasListTab({required this.category});
+
+  // Referencia a la colección de Firestore
+  static final CollectionReference _recetasCollection = FirebaseFirestore
+      .instance
+      .collection('recetas');
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: const <Widget>[
-        // Uso de rutas de assets locales
-        RecetaCard(
-          title: "Granola Casera",
-          description:
-              "Preparar tu propia granola en casa es una excelente manera de disfrutar un desayuno saludable y libre de aditivos.",
-          imageUrl: "assets/images/granola.jpg",
-        ),
-        RecetaCard(
-          title: "Pudding de Chía y Cúrcuma",
-          description:
-              "Este pudding es una opción nutritiva y fácil de preparar, cargada de antioxidantes y grasas saludables.",
-          imageUrl: "assets/images/pudin.jpg",
-        ),
-        RecetaCard(
-          title: "Avena Cremosa con Frutas y Semillas",
-          description:
-              "Comienza tu día con un desayuno nutritivo y equilibrado.",
-          imageUrl: "assets/images/avena-cremosa.jpg",
-        ),
-      ],
+    // StreamBuilder escucha los cambios en tiempo real en la base de datos
+    return StreamBuilder<QuerySnapshot>(
+      // Consulta a Firestore: obtenemos documentos donde 'category' es igual al valor de la pestaña
+      stream: _recetasCollection
+          .where('category', isEqualTo: category)
+          .snapshots(),
+
+      builder: (context, snapshot) {
+        // Estado de error
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Error al cargar las recetas: ${snapshot.error}'),
+          );
+        }
+
+        // Estado de carga (conexión esperando)
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: _primaryGreen),
+          );
+        }
+
+        // Estado de datos: mapeamos los documentos a una lista de objetos Receta
+        final List<Receta> recetas = snapshot.data!.docs
+            .map(
+              // El casteo es necesario para evitar errores de tipo en tiempo de ejecución
+              (doc) => Receta.fromFirestore(doc as DocumentSnapshot<Object?>),
+            )
+            .toList();
+
+        // Si no hay recetas
+        if (recetas.isEmpty) {
+          return Center(
+            child: Text('No hay recetas en la categoría de $category.'),
+          );
+        }
+
+        // Mostrar la lista de recetas
+        return ListView.builder(
+          itemCount: recetas.length,
+          itemBuilder: (context, index) {
+            return RecetaCard(receta: recetas[index]);
+          },
+        );
+      },
     );
   }
 }
 
-// --- Contenido de la Pestaña SNACKS ---
-class _SnacksTab extends StatelessWidget {
-  const _SnacksTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: const <Widget>[
-        // Uso de rutas de assets locales
-        RecetaCard(
-          title: "Galletas de Avena y Almendras",
-          description:
-              "Una opción saludable, crujiente y deliciosa, perfecta para acompañar con café o té.",
-          imageUrl: "assets/images/galletas.jpg",
-        ),
-        RecetaCard(
-          title: "Barritas Energéticas de Cacao y Nueces",
-          description:
-              "Si buscas un snack natural y delicioso para recargar energías, estas barritas caseras son la opción ideal.",
-          imageUrl: "assets/images/barritas.jpg",
-        ),
-        RecetaCard(
-          title: "Chips Crujientes de Garbanzo con Especias",
-          description:
-              "Disfruta de un snack crujiente, sabroso y lleno de proteína vegetal.",
-          imageUrl: "assets/images/chips-garbanzos.jpg",
-        ),
-      ],
-    );
-  }
-}
-
-// --- Contenido de la Pestaña FAVORITOS ---
+// --- Contenido de la Pestaña FAVORITOS (Se mantiene igual, la lógica de favoritos necesitaría autenticación/estado local) ---
 class _FavoritosTab extends StatelessWidget {
   const _FavoritosTab();
 
@@ -253,7 +393,7 @@ class _FavoritosTab extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.favorite, color: _primaryGreen, size: 40),
+          Icon(Icons.star, color: _primaryGreen, size: 40),
           SizedBox(height: 10),
           Text(
             "¡Aún no tienes recetas favoritas!",
@@ -264,7 +404,7 @@ class _FavoritosTab extends StatelessWidget {
             ),
           ),
           Text(
-            "Marca el corazón ❤️ para guardarlas aquí.",
+            "Marca la estrella ⭐ para guardarlas aquí.",
             style: TextStyle(
               fontSize: 14,
               fontFamily: "roboto",

@@ -152,7 +152,6 @@ class PrivacidadScreen extends StatelessWidget {
         elevation: 0,
         // Propiedades heredadas de UbicacionesScreen:
         centerTitle: false,
-        titleSpacing: 0.0,
         // Icono de regreso:
         leading: IconButton(
           icon: const Icon(
