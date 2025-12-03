@@ -1,49 +1,57 @@
+// Necesitarás importar estos dos paquetes para Firebase.
+// Asegúrate de añadirlos en tu archivo pubspec.yaml:
+//   firebase_core: ^latest_version
+//   cloud_firestore: ^latest_version
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// --- Paleta de Colores ---
-
+// --- Paleta de Colores (se mantiene igual) ---
 const Color _primaryGreen = Color(0xFF4CAF50); // Verde principal de ECO Granel
-
 const Color _darkTextColor = Color(0xFF333333); // Color oscuro para textos
+const Color _orangeColor = Color(0xFFC76939); // Color de adición
+const Color _filterMenuBackgroundColor = Color(
+  0xFFFFFFFF,
+); // Color de fondo del filtro
 
-const Color _orangeColor = Color(
-  0xFFC76939,
-); // Color de adición (sugerido por el carrito/tema)
-
-// NUEVO: Color de fondo solicitado para el menú de filtro
-const Color _filterMenuBackgroundColor = Color(0xFFFFFFFF); // Gris muy claro
-
-// Colores originales que ya no se usan en el menú de filtro:
-// const Color _menuTextColor = Color(0xFFFFFFFF);
-// const Color _selectedOptionColor = Color(0xFFFFFFFF);
-
-// --- Modelo de Datos del Producto (simulación) ---
+// --- Modelo de Datos del Producto (MODIFICADO para Firebase) ---
 
 class Product {
+  final String id; // Nuevo: ID del documento de Firestore
   final String name;
-
   final String imagePath;
-
   final String price;
-
   final String weight;
-
-  final String category; // NUEVA PROPIEDAD DE CATEGORÍA
+  final String category;
 
   const Product({
+    required this.id,
     required this.name,
     required this.imagePath,
     required this.price,
     required this.weight,
-    required this.category, // Requiere la nueva propiedad
+    required this.category,
   });
+
+  // ********** CONSTRUCTOR DE FIREBASE **********
+  // Convierte un DocumentSnapshot de Firestore en un objeto Product
+  factory Product.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Product(
+      id: doc.id,
+      name: data['name'] ?? 'Producto Desconocido',
+      // NOTA: 'imagePath', 'price', y 'weight' deben ser campos en tu DB
+      imagePath: data['imagePath'] ?? 'assets/images/default.jpg',
+      price: data['price'] ?? '\$0 COP',
+      weight: data['weight'] ?? '0g',
+      category: data['category'] ?? 'Sin Categoría',
+    );
+  }
 }
 
-// --- Componente de Tarjeta de Producto (ProductCard) ---
-
+// --- Componente de Tarjeta de Producto (_ProductCard) (Se mantiene igual) ---
+// ... (Tu código de _ProductCard se mantiene sin cambios)
 class _ProductCard extends StatelessWidget {
   final Product product;
-
   final VoidCallback onAddToCart;
 
   const _ProductCard({required this.product, required this.onAddToCart});
@@ -58,7 +66,6 @@ class _ProductCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          // Acción al tocar el producto
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Ver detalles de ${product.name}')),
           );
@@ -76,7 +83,6 @@ class _ProductCard extends StatelessWidget {
                 child: Image.asset(product.imagePath, fit: BoxFit.cover),
               ),
             ),
-
             // 2. Información del Producto
             Padding(
               padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 4.0),
@@ -104,7 +110,6 @@ class _ProductCard extends StatelessWidget {
                 ],
               ),
             ),
-
             // 3. Botón de Agregar (Signo Más)
             Container(
               alignment: Alignment.center,
@@ -130,98 +135,13 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-// --- Lista de Productos Simulados (Clasificados) ---
-final List<Product> _products = [
-  const Product(
-    name: "Avena en Hojuelas",
-    imagePath: 'assets/images/avena-hojuelas.jpg',
-    price: "\$750 COP",
-    weight: "50g",
-    category: 'Harinas y Cereales',
-  ),
-  const Product(
-    name: "Harina de Almendra",
-    imagePath: 'assets/images/harina-almendras.jpg',
-    price: "\$5.600 COP",
-    weight: "50g",
-    category: 'Harinas y Cereales',
-  ),
-  const Product(
-    name: "Semillas de Chía",
-    imagePath: 'assets/images/chia.jpg',
-    price: "\$3.700 COP",
-    weight: "50g",
-    category: 'Frutos Secos y Semillas',
-  ),
-  const Product(
-    name: "Almendras",
-    imagePath: 'assets/images/almendras.jpg',
-    price: "\$4.650 COP",
-    weight: "50g",
-    category: 'Frutos Secos y Semillas',
-  ),
-  const Product(
-    name: "Canela en Polvo",
-    imagePath: 'assets/images/canela-polvo.jpg',
-    price: "\$1.800 COP",
-    weight: "20g",
-    category: 'Especias y Condimentos',
-  ),
-  const Product(
-    name: "Arroz Integral",
-    imagePath: 'assets/images/arroz-integral.jpg',
-    price: "\$800 COP",
-    weight: "50g",
-    category: 'Granos y Legumbres',
-  ),
-  const Product(
-    name: "Garbanzos",
-    imagePath: 'assets/images/garbanzos.jpg',
-    price: "\$400 COP",
-    weight: "50g",
-    category: 'Granos y Legumbres',
-  ),
-  const Product(
-    name: "Pimienta negra",
-    imagePath: 'assets/images/pimienta.jpg',
-    price: "\$1.575 COP",
-    weight: "15g",
-    category: 'Especias y Condimentos',
-  ),
-  const Product(
-    name: "Cúrcuma en polvo",
-    imagePath: 'assets/images/curcuma.jpg',
-    price: "\$900 COP",
-    weight: "20g",
-    category: 'Especias y Condimentos',
-  ),
-  const Product(
-    name: "Nueces",
-    imagePath: 'assets/images/nueces.jpg',
-    price: "\$2.850 COP",
-    weight: "15g",
-    category: 'Frutos Secos y Semillas',
-  ),
-  const Product(
-    name: "Lentejas",
-    imagePath: 'assets/images/lentejas.jpg',
-    price: "\$800 COP",
-    weight: "100g",
-    category: 'Granos y Legumbres',
-  ),
-  const Product(
-    name: "Quinoa Orgánica",
-    imagePath: 'assets/images/quinoa.jpg',
-    price: "\$3.400 COP",
-    weight: "50g",
-    category: 'Harinas y Cereales',
-  ),
-];
-
 // -------------------------------------------------------------------
-// --- Componente para la Opción del Menú de Filtros (Ajustado) ---
+// --- Lista de Productos Simulados ELIMINADA ---
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+// --- Componente para la Opción del Menú de Filtros (_FilterOption) (Se mantiene igual) ---
+// ... (Tu código de _FilterOption se mantiene sin cambios)
 class _FilterOption extends StatelessWidget {
   final String title;
   final bool isSelected;
@@ -235,40 +155,28 @@ class _FilterOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Define el color del texto según el estado de selección
     final Color textColor = isSelected ? _orangeColor : _darkTextColor;
-
-    // 2. Define el color de la línea de selección (usando el mismo color naranja)
     final Color selectedLineColor = _orangeColor;
 
     final TextStyle textStyle = TextStyle(
       fontSize: 18,
       fontFamily: "roboto",
-      color: textColor, // Usa el color dinámico
+      color: textColor,
       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
     );
 
     return InkWell(
       onTap: onTap,
-      // Usamos un Container con Padding para el área de toque/visual
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 24.0),
         child: Column(
-          // Usamos Column para apilar el texto y la línea
-          crossAxisAlignment: CrossAxisAlignment.start, // Alineación izquierda
-          mainAxisSize: MainAxisSize.min, // Ocupar el mínimo espacio vertical
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // El texto de la categoría
             Text(title, style: textStyle),
-            // Espacio de separación entre el texto y la línea
             if (isSelected) const SizedBox(height: 4),
-            // La línea de selección (Container)
             if (isSelected)
-              Container(
-                height: 2, // Grosor de la línea
-                width: 200, // Ancho de la línea (puede ser ajustado)
-                color: selectedLineColor, // Color de la línea
-              ),
+              Container(height: 2, width: 200, color: selectedLineColor),
           ],
         ),
       ),
@@ -277,19 +185,17 @@ class _FilterOption extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// --- Componente para la Selección de Filtros a Pantalla Completa ---
-// -------------------------------------------------------------------
-
+// --- Componente para la Selección de Filtros a Pantalla Completa (Se mantiene igual) ---
+// ... (Tu código de _FilterFullScreenDialog se mantiene sin cambios)
 class _FilterFullScreenDialog extends StatelessWidget {
-  final String currentCategory; // Categoría actual para marcar
-  final ValueChanged<String> onCategorySelected; // Callback al seleccionar
+  final String currentCategory;
+  final ValueChanged<String> onCategorySelected;
 
   const _FilterFullScreenDialog({
     required this.currentCategory,
     required this.onCategorySelected,
   });
 
-  // Lista de las categorías
   static const List<String> _categories = [
     'Todos los productos',
     'Especias y Condimentos',
@@ -300,23 +206,19 @@ class _FilterFullScreenDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Usamos el nuevo color de fondo para el menú
     return Dialog.fullscreen(
       backgroundColor: _filterMenuBackgroundColor,
       child: Scaffold(
-        // 2. El AppBar también debe usar el nuevo color de fondo
         appBar: AppBar(
           backgroundColor: _filterMenuBackgroundColor,
           elevation: 5,
           titleSpacing: 0.0,
           leading: IconButton(
-            // El icono de cierre usa el color oscuro
             icon: const Icon(Icons.close, color: _darkTextColor),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          // MODIFICACIÓN: Se envuelve el Text con Padding para añadir el margen izquierdo de 30.0
           title: const Padding(
-            padding: EdgeInsets.only(left: 0.0), // Padding de 30 a la izquierda
+            padding: EdgeInsets.only(left: 0.0),
             child: Text(
               'Categorías',
               style: TextStyle(
@@ -324,31 +226,24 @@ class _FilterFullScreenDialog extends StatelessWidget {
                 fontFamily: "roboto",
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-              ), // El título usa color oscuro
+              ),
             ),
           ),
         ),
-        // 3. El cuerpo también usa el nuevo color
         backgroundColor: _filterMenuBackgroundColor,
         body: Padding(
-          // 4. Se agrega un padding superior para "subir" el menú
           padding: const EdgeInsets.only(top: 30.0),
           child: Column(
-            // 5. Se cambia a MainAxisAlignment.start para empezar desde arriba
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: _categories.map((category) {
-              // Comprueba si esta categoría es la seleccionada
               final bool isSelected = category == currentCategory;
 
               return _FilterOption(
                 title: category,
                 isSelected: isSelected,
                 onTap: () {
-                  // 1. Llama al callback para actualizar el estado en TiendaScreen
                   onCategorySelected(category);
-
-                  // 2. Cierra el diálogo
                   Navigator.of(context).pop();
                 },
               );
@@ -375,21 +270,23 @@ class _TiendaScreenState extends State<TiendaScreen> {
   // Estado para rastrear la categoría seleccionada. Por defecto: "Todos los productos"
   String _selectedCategory = 'Todos los productos';
 
-  // --- LÓGICA CLAVE: Filtrado y Ordenamiento ---
-  List<Product> _getFilteredProducts() {
+  // Referencia a la colección de Firestore
+  final CollectionReference _productCollection = FirebaseFirestore.instance
+      .collection('products');
+
+  // Lógica de filtrado y ordenamiento (AHORA RECIBE LA LISTA COMPLETA DE FIREBASE)
+  List<Product> _getFilteredProducts(List<Product> allProducts) {
     List<Product> filteredList;
 
     if (_selectedCategory == 'Todos los productos') {
-      // Si es 'Todos los productos', usa la lista completa
-      filteredList = _products;
+      filteredList = allProducts;
     } else {
-      // Filtra por la categoría seleccionada
-      filteredList = _products
+      filteredList = allProducts
           .where((product) => product.category == _selectedCategory)
           .toList();
     }
 
-    // Ordena la lista alfabéticamente por nombre, según lo solicitado
+    // Ordena la lista alfabéticamente por nombre
     filteredList.sort((a, b) => a.name.compareTo(b.name));
 
     return filteredList;
@@ -402,22 +299,19 @@ class _TiendaScreenState extends State<TiendaScreen> {
     });
   }
 
-  // Función auxiliar para las acciones
   void _handleAction(BuildContext context, String action) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Acción: $action')));
   }
 
-  // Muestra el diálogo de filtro
   void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (context) {
         return _FilterFullScreenDialog(
           currentCategory: _selectedCategory,
-          onCategorySelected:
-              _updateCategory, // Pasa la función de actualización
+          onCategorySelected: _updateCategory,
         );
       },
     );
@@ -425,9 +319,6 @@ class _TiendaScreenState extends State<TiendaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Obtiene la lista de productos filtrada y ordenada
-    final filteredProducts = _getFilteredProducts();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -436,7 +327,6 @@ class _TiendaScreenState extends State<TiendaScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Muestra la categoría actualmente seleccionada
               Text(
                 _selectedCategory,
                 style: const TextStyle(
@@ -448,15 +338,13 @@ class _TiendaScreenState extends State<TiendaScreen> {
               ),
               Row(
                 children: [
-                  // Icono de Filtro
                   IconButton(
                     icon: const Icon(
                       Icons.filter_list,
                       color: _darkTextColor,
                       size: 28,
                     ),
-                    onPressed:
-                        _showFilterDialog, // Llama a la función del diálogo
+                    onPressed: _showFilterDialog,
                   ),
                 ],
               ),
@@ -464,32 +352,65 @@ class _TiendaScreenState extends State<TiendaScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        // Catálogo de Productos (GridView)
+        // ********** StreamBuilder para cargar datos de Firebase **********
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: GridView.builder(
-              padding: const EdgeInsets.only(bottom: 20.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12.0,
-                mainAxisSpacing: 12.0,
-                childAspectRatio: 0.75,
-              ),
-              // Usa la lista filtrada y ordenada
-              itemCount: filteredProducts.length,
-              itemBuilder: (context, index) {
-                final product = filteredProducts[index];
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _productCollection.snapshots(),
+            builder: (context, snapshot) {
+              // 1. Manejo del estado de conexión (Cargando)
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                return _ProductCard(
-                  product: product,
-                  onAddToCart: () =>
-                      _handleAction(context, 'Añadir ${product.name}'),
+              // 2. Manejo de errores
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error al cargar datos: ${snapshot.error}'),
                 );
-              },
-            ),
+              }
+
+              // 3. Manejo de datos vacíos
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Text('No hay productos disponibles.'),
+                );
+              }
+
+              // 4. Mapear DocumentSnapshot a objetos Product
+              final allProducts = snapshot.data!.docs
+                  .map((doc) => Product.fromFirestore(doc))
+                  .toList();
+
+              // 5. Aplicar el filtro de categoría y ordenamiento
+              final filteredProducts = _getFilteredProducts(allProducts);
+
+              // 6. Catálogo de Productos (GridView)
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: GridView.builder(
+                  padding: const EdgeInsets.only(bottom: 20.0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12.0,
+                    mainAxisSpacing: 12.0,
+                    childAspectRatio: 0.75,
+                  ),
+                  itemCount: filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = filteredProducts[index];
+
+                    return _ProductCard(
+                      product: product,
+                      onAddToCart: () =>
+                          _handleAction(context, 'Añadir ${product.name}'),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ),
+        // ***************************************************************
       ],
     );
   }
