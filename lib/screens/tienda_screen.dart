@@ -48,9 +48,20 @@ class Product {
 // --- Componente de Tarjeta de Producto (_ProductCard) (MODIFICADO) ---
 class _ProductCard extends StatelessWidget {
   final Product product;
+  // Se mantiene onAddToCart, pero para el tap en la tarjeta se usará un onTap específico.
+  // Lo vamos a usar para el botón, pero lo modificaremos para que navegue.
   final VoidCallback onAddToCart;
 
   const _ProductCard({required this.product, required this.onAddToCart});
+
+  // Función de navegación común para el botón y el tap de la tarjeta.
+  void _navigateToProductDetail(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProductDetailScreen(productId: product.id),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,18 +72,9 @@ class _ProductCard extends StatelessWidget {
         side: BorderSide.none,
       ),
       child: InkWell(
-        // ********** MODIFICACIÓN AQUÍ **********
-        onTap: () {
-          // Navega a la nueva pantalla de detalles, pasando el ID del producto
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              // ¡CORRECTO! Ahora pasas productId: product.id
-              builder: (context) => ProductDetailScreen(productId: product.id),
-            ),
-          );
-        },
+        // Se mantiene el onTap principal de la tarjeta para navegación
+        onTap: () => _navigateToProductDetail(context),
 
-        // ***************************************
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -118,7 +120,10 @@ class _ProductCard extends StatelessWidget {
               alignment: Alignment.center,
               padding: const EdgeInsets.only(bottom: 8.0),
               child: InkWell(
-                onTap: onAddToCart,
+                // ********** MODIFICACIÓN CLAVE AQUÍ **********
+                // El tap en el icono + ahora llama a la misma función de navegación
+                onTap: () => _navigateToProductDetail(context),
+                // **********************************************
                 customBorder: const CircleBorder(),
                 child: Container(
                   width: 38,
@@ -138,6 +143,7 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
+// Código restante (sin modificar):
 // -------------------------------------------------------------------
 // --- Componente para la Opción del Menú de Filtros (_FilterOption) (Se mantiene igual) ---
 class _FilterOption extends StatelessWidget {
@@ -297,6 +303,7 @@ class _TiendaScreenState extends State<TiendaScreen> {
   }
 
   void _handleAction(BuildContext context, String action) {
+    // Esta función ya no se usa para el tap del ícono +, pero se mantiene para la plantilla
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Acción: $action')));
@@ -398,8 +405,12 @@ class _TiendaScreenState extends State<TiendaScreen> {
 
                     return _ProductCard(
                       product: product,
-                      onAddToCart: () =>
-                          _handleAction(context, 'Añadir ${product.name}'),
+                      // Se usa _handleAction aquí como un placeholder si se requiere una acción al presionar la tarjeta,
+                      // aunque el tap principal de la tarjeta ya navega en el widget.
+                      onAddToCart: () => _handleAction(
+                        context,
+                        'Añadir ${product.name} (Acción anterior)',
+                      ),
                     );
                   },
                 ),
