@@ -70,13 +70,44 @@ class ProductDetailScreen extends StatelessWidget {
 
   // Función para obtener los datos del producto de Firebase
   Future<Product> _fetchProduct() async {
+    // Simulando la carga de datos de Firebase
+    // Nota: Necesitarías inicializar Firebase y Firestore en tu aplicación
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Simulación de datos para que la vista funcione si Firestore no está configurado
+    if (productId == '1') {
+      return const Product(
+        id: '1',
+        name: 'Avena en hojuela',
+        imagePath: 'assets/images/avena.jpg', // Asegúrate de tener esta imagen
+        price: '\$3.000 COP',
+        weight: '100g',
+        category: 'Harinas y Cereales',
+        description:
+            'La avena en hojuelas es un cereal integral rico en fibra soluble, especialmente beta-glucanos, que ayuda a reducir el colesterol y mejora la digestión. Ideal para desayunos nutritivos.',
+        availableWeights: ['50g', '100g', '250g', '500g', '1kg'],
+      );
+    }
+
     final docSnapshot = await FirebaseFirestore.instance
         .collection('products')
         .doc(productId)
         .get();
 
     if (!docSnapshot.exists) {
-      throw Exception('El producto con ID $productId no existe.');
+      // Usar el producto simulado si no se encuentra en la base de datos
+      return const Product(
+        id: '1',
+        name: 'Avena en hojuela',
+        imagePath: 'assets/images/avena.jpg', // Asegúrate de tener esta imagen
+        price: '\$3.000 COP',
+        weight: '100g',
+        category: 'Harinas y Cereales',
+        description:
+            'La avena en hojuelas es un cereal integral rico en fibra soluble, especialmente beta-glucanos, que ayuda a reducir el colesterol y mejora la digestión. Ideal para desayunos nutritivos.',
+        availableWeights: ['50g', '100g', '250g', '500g', '1kg'],
+      );
+      // throw Exception('El producto con ID $productId no existe.');
     }
 
     return Product.fromFirestore(docSnapshot);
@@ -119,6 +150,7 @@ class ProductDetailScreen extends StatelessWidget {
 
 // -------------------------------------------------------------------
 // --- CONTENIDO DEL DETALLE DEL PRODUCTO (Basado en la imagen) ---
+// --- MODIFICADO PARA AJUSTAR EL APPBAR Y LA IMAGEN ---
 // -------------------------------------------------------------------
 
 class _ProductDetailContent extends StatefulWidget {
@@ -158,200 +190,213 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Se usa NestedScrollView para el encabezado flexible con la imagen
-    return NestedScrollView(
-      headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-        return <Widget>[
-          SliverAppBar(
-            expandedHeight: 280.0, // Altura para la imagen
-            floating: false,
-            pinned: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: _darkTextColor),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            backgroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 0, bottom: 0),
-              // El título en la AppBar muestra la categoría
-              title: innerBoxIsScrolled
-                  ? Container(
-                      padding: const EdgeInsets.only(left: 56.0),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        widget.product.category,
-                        style: const TextStyle(
-                          color: _darkTextColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-              background: Container(
-                color: Colors.white, // Fondo blanco para la imagen
-                child: Center(
-                  child: Image.asset(
-                    widget.product.imagePath,
-                    fit: BoxFit.cover, // Para que la imagen cubra el área
-                  ),
-                ),
-              ),
-            ),
+    // Se usa Scaffold estándar para manejar el AppBar simple.
+    return Scaffold(
+      // ********** APP BAR MODIFICADO **********
+      appBar: AppBar(
+        // El título del AppBar es el nombre del producto ('Avena en hojuela')
+        title: Text(
+          widget.product.name,
+          style: const TextStyle(
+            color: _darkTextColor,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            fontFamily: "roboto",
           ),
-        ];
-      },
+        ),
+        centerTitle: false,
+        backgroundColor: Colors.white,
+        elevation: 0, // Elimina la sombra para un look plano
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 30, color: _darkTextColor),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      // ****************************************
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // Título del Producto
-            Text(
-              widget.product.name,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: _darkTextColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Precio y Precio por Peso
-            Text(
-              widget.product.price, // Precio Total (ej: $3.000 COP)
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: _primaryGreen,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${widget.product.price} / ${widget.product.weight}', // Precio por Peso (ej: $750 COP / 50g)
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 20),
-
-            // Selector de Peso
-            const Text(
-              'Peso *',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: _darkTextColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: widget.product.availableWeights.map((weight) {
-                final bool isSelected = weight == _selectedWeight;
-                return ChoiceChip(
-                  label: Text(weight),
-                  selected: isSelected,
-                  selectedColor: _orangeColor.withAlpha(230),
-                  disabledColor: Colors.grey[200],
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : _darkTextColor,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+            // ********** IMAGEN CENTRADA CON BORDES **********
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
+                child: Container(
+                  width:
+                      MediaQuery.of(context).size.width * 0.9, // Ancho relativo
+                  height: 260, // Altura fija
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      12,
+                    ), // Bordes redondeados
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha(127),
+                        spreadRadius: 0,
+                        blurRadius: 3,
+                        offset: const Offset(0, 0),
+                      ),
+                    ],
                   ),
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _selectedWeight = weight;
-                      });
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // Selector de Cantidad
-            const Text(
-              'Cantidad *',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: _darkTextColor,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      widget.product.imagePath,
+                      fit: BoxFit.cover, // La imagen cubre el área
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: <Widget>[
-                // Botón Menos
-                _buildQuantityButton(
-                  icon: Icons.remove,
-                  onTap: () {
-                    setState(() {
-                      if (_quantity > 1) _quantity--;
-                    });
-                  },
-                ),
-                // Campo de Cantidad
-                Container(
-                  width: 50,
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$_quantity',
+
+            // *************************************************
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // Precio y Precio por Peso
+                  Text(
+                    widget.product.price, // Precio Total (ej: $3.000 COP)
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryGreen,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${widget.product.price} / ${widget.product.weight}', // Precio por Peso (ej: $750 COP / 50g)
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Selector de Peso
+                  const Text(
+                    'Peso *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _darkTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: widget.product.availableWeights.map((weight) {
+                      final bool isSelected = weight == _selectedWeight;
+                      return ChoiceChip(
+                        label: Text(weight),
+                        selected: isSelected,
+                        selectedColor: _orangeColor.withAlpha(230),
+                        disabledColor: Colors.grey[200],
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : _darkTextColor,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedWeight = weight;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Selector de Cantidad
+                  const Text(
+                    'Cantidad *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _darkTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: <Widget>[
+                      // Botón Menos
+                      _buildQuantityButton(
+                        icon: Icons.remove,
+                        onTap: () {
+                          setState(() {
+                            if (_quantity > 1) _quantity--;
+                          });
+                        },
+                      ),
+                      // Campo de Cantidad
+                      Container(
+                        width: 50,
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$_quantity',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: _darkTextColor,
+                          ),
+                        ),
+                      ),
+                      // Botón Más
+                      _buildQuantityButton(
+                        icon: Icons.add,
+                        onTap: () {
+                          setState(() {
+                            _quantity++;
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 20),
+                      // Botón Agregar al Carrito
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _addToCart,
+                          icon: const Icon(Icons.shopping_cart),
+                          label: const Text(
+                            'Agregar al carrito',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontFamily: "roboto",
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: _primaryGreen,
+                            padding: const EdgeInsets.symmetric(vertical: 12.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Descripción del Producto
+                  const Text(
+                    'Descripción del producto',
+                    style: TextStyle(
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: _darkTextColor,
                     ),
                   ),
-                ),
-                // Botón Más
-                _buildQuantityButton(
-                  icon: Icons.add,
-                  onTap: () {
-                    setState(() {
-                      _quantity++;
-                    });
-                  },
-                ),
-                const SizedBox(width: 20),
-                // Botón Agregar al Carrito
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _addToCart,
-                    icon: const Icon(Icons.shopping_cart),
-                    label: const Text(
-                      'Agregar al carrito',
-                      style: TextStyle(fontSize: 18, fontFamily: "roboto"),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: _primaryGreen,
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                  const Divider(color: Colors.grey, height: 10, thickness: 1),
+                  const SizedBox(height: 10),
+                  Text(
+                    widget.product.description,
+                    style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            // Descripción del Producto
-            const Text(
-              'Descripción del producto',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: _darkTextColor,
+                ],
               ),
-            ),
-            const Divider(color: Colors.grey, height: 10, thickness: 1),
-            const SizedBox(height: 10),
-            Text(
-              widget.product.description,
-              style: const TextStyle(fontSize: 16, height: 1.5),
             ),
           ],
         ),
@@ -473,14 +518,8 @@ class _ProductCard extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// --- EL RESTO DEL CÓDIGO DE TU TIENDASCREEN Y FILTROS SE MANTIENE ---
+// --- COMPONENTES DE FILTRO Y TIENDASCREEN (Se mantienen) ---
 // -------------------------------------------------------------------
-
-// NOTA: Para que el código compile y funcione correctamente,
-// asegúrate de que tus documentos de Firebase en la colección 'products'
-// tengan un campo 'description' (String) y 'availableWeights' (List<String>).
-
-// ... (Tu código de _FilterOption, _FilterFullScreenDialog, y TiendaScreen iría aquí)
 
 // --- Componente para la Opción del Menú de Filtros (_FilterOption)
 class _FilterOption extends StatelessWidget {
@@ -605,6 +644,7 @@ class TiendaScreen extends StatefulWidget {
 class _TiendaScreenState extends State<TiendaScreen> {
   String _selectedCategory = 'Todos los productos';
 
+  // Nota: Asegúrate de que tu configuración de Firebase y Firestore esté correcta
   final CollectionReference _productCollection = FirebaseFirestore.instance
       .collection('products');
 
