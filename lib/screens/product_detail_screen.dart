@@ -12,19 +12,20 @@ const Color _filterMenuBackgroundColor = Color(
 ); // Color de fondo del filtro
 
 // -------------------------------------------------------------------
-// --- MODELO DE DATOS DEL PRODUCTO (Se mantiene igual) ---
+// --- MODELO DE DATOS DEL PRODUCTO MODIFICADO ---
 // -------------------------------------------------------------------
 class Product {
-  final String id; // Nuevo: ID del documento de Firestore
+  final String id;
   final String name;
   final String imagePath;
-  final String price;
-  final String weight;
+  final String price; // Precio por defecto (ej: para la lista)
+  final String weight; // Peso por defecto (ej: para la lista)
   final String category;
-  // Añadido: para el detalle, se necesita la descripción
-  final String description;
-  // Añadido: para el detalle, se necesitan los pesos disponibles (simulado)
+  final String description; // Campo de descripción solicitado
   final List<String> availableWeights;
+  // ********** CAMPO CLAVE AÑADIDO **********
+  // Un mapa donde la clave es el peso (String) y el valor es el precio (double/int)
+  final Map<String, int> priceMap;
 
   const Product({
     required this.id,
@@ -35,31 +36,52 @@ class Product {
     required this.category,
     required this.description,
     required this.availableWeights,
+    required this.priceMap, // Añadido
   });
 
   // ********** CONSTRUCTOR DE FIREBASE MODIFICADO **********
   factory Product.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
+    // Conversión segura del mapa de precios, asumiendo que Firestore almacena Map<String, dynamic>
+    final Map<String, int> loadedPriceMap = {};
+    final rawPriceMap = data['priceMap'] as Map<String, dynamic>? ?? {};
+
+    rawPriceMap.forEach((key, value) {
+      // Asegura que el valor sea un entero (o conviértelo si es double, si es necesario)
+      loadedPriceMap[key] = (value as num).toInt();
+    });
+
     return Product(
       id: doc.id,
       name: data['name'] ?? 'Producto Desconocido',
       imagePath: data['imagePath'] ?? 'assets/images/default.jpg',
+      // Se mantiene 'price' y 'weight' para la vista de lista, aunque el detalle usará el mapa
       price: data['price'] ?? '\$0 COP',
       weight: data['weight'] ?? '0g',
       category: data['category'] ?? 'Sin Categoría',
-      // Campos extraídos para la vista de detalles:
+      // Campo de descripción solicitado:
       description: data['description'] ?? 'Descripción no disponible.',
-      // Asume que la DB tiene un campo 'availableWeights' como List<String>
+      // Lista de pesos disponibles
       availableWeights: List<String>.from(
-        data['availableWeights'] ??
-            ['50g', '100g', '200g', '300g', '500g', '1kg'],
+        data['availableWeights'] ?? ['50g', '100g', '200g'],
       ),
+      // Mapa de precios
+      priceMap: loadedPriceMap.isNotEmpty
+          ? loadedPriceMap
+          : {
+              '50g': 1500,
+              '100g': 3000,
+              '250g': 7000,
+              '500g': 13000,
+              '1kg': 25000,
+            }, // Mapa de precios por defecto
     );
   }
 }
 
 // -------------------------------------------------------------------
-// --- PANTALLA DE DETALLE DEL PRODUCTO ---
+// --- PANTALLA DE DETALLE DEL PRODUCTO (Se mantiene) ---
 // -------------------------------------------------------------------
 
 class ProductDetailScreen extends StatelessWidget {
@@ -70,12 +92,9 @@ class ProductDetailScreen extends StatelessWidget {
 
   // Función para obtener los datos del producto de Firebase
   Future<Product> _fetchProduct() async {
-    // Simulando la carga de datos de Firebase
-    // Nota: Necesitarías inicializar Firebase y Firestore en tu aplicación
-    await Future.delayed(const Duration(milliseconds: 500));
-
     // Simulación de datos para que la vista funcione si Firestore no está configurado
     if (productId == '1') {
+      // ********** DATA SIMULADA MODIFICADA **********
       return const Product(
         id: '1',
         name: 'Avena en hojuela',
@@ -86,8 +105,16 @@ class ProductDetailScreen extends StatelessWidget {
         description:
             'La avena en hojuelas es un cereal integral rico en fibra soluble, especialmente beta-glucanos, que ayuda a reducir el colesterol y mejora la digestión. Ideal para desayunos nutritivos.',
         availableWeights: ['50g', '100g', '250g', '500g', '1kg'],
+        priceMap: {
+          '50g': 1500,
+          '100g': 3000,
+          '250g': 7000,
+          '500g': 13000,
+          '1kg': 25000,
+        },
       );
     }
+    // ************************************************
 
     final docSnapshot = await FirebaseFirestore.instance
         .collection('products')
@@ -106,6 +133,13 @@ class ProductDetailScreen extends StatelessWidget {
         description:
             'La avena en hojuelas es un cereal integral rico en fibra soluble, especialmente beta-glucanos, que ayuda a reducir el colesterol y mejora la digestión. Ideal para desayunos nutritivos.',
         availableWeights: ['50g', '100g', '250g', '500g', '1kg'],
+        priceMap: {
+          '50g': 1500,
+          '100g': 3000,
+          '250g': 7000,
+          '500g': 13000,
+          '1kg': 25000,
+        },
       );
       // throw Exception('El producto con ID $productId no existe.');
     }
@@ -149,8 +183,7 @@ class ProductDetailScreen extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// --- CONTENIDO DEL DETALLE DEL PRODUCTO (Basado en la imagen) ---
-// --- MODIFICADO PARA AJUSTAR EL APPBAR Y LA IMAGEN ---
+// --- CONTENIDO DEL DETALLE DEL PRODUCTO MODIFICADO ---
 // -------------------------------------------------------------------
 
 class _ProductDetailContent extends StatefulWidget {
@@ -171,18 +204,34 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   @override
   void initState() {
     super.initState();
-    // Se inicializa con el primer peso disponible
-    _selectedWeight = widget.product.availableWeights.isNotEmpty
-        ? widget.product.availableWeights.first
-        : widget.product.weight;
+    // Se inicializa con el primer peso disponible que tenga un precio en el mapa
+    _selectedWeight = widget.product.availableWeights.firstWhere(
+      (weight) => widget.product.priceMap.containsKey(weight),
+      orElse: () => widget.product.availableWeights.first,
+    );
+  }
+
+  // ********** FUNCIÓN CLAVE AÑADIDA **********
+  // Calcula el precio total basado en la selección actual.
+  String _calculateTotalPrice() {
+    // Obtiene el precio base por la unidad de peso seleccionada (ej: precio de 100g)
+    final basePrice = widget.product.priceMap[_selectedWeight] ?? 0;
+
+    // Calcula el precio total: Precio Base * Cantidad de unidades
+    final totalPrice = basePrice * _quantity;
+
+    // Formatea el precio a un String (ej: "$3.000 COP")
+    // Nota: Una implementación real debería usar una biblioteca como 'intl' para formateo monetario
+    return '\$${totalPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} COP';
   }
 
   // Lógica para el botón de Agregar al Carrito (simulado)
   void _addToCart() {
+    final currentPrice = _calculateTotalPrice();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Añadido al carrito: $_quantity unidad(es) de ${widget.product.name} en $_selectedWeight',
+          'Añadido al carrito: $_quantity unidad(es) de ${widget.product.name} en $_selectedWeight por $currentPrice',
         ),
       ),
     );
@@ -190,9 +239,17 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
 
   @override
   Widget build(BuildContext context) {
+    final currentTotalPrice = _calculateTotalPrice(); // Calcula el precio total
+
+    // Obtiene el precio por peso para mostrarlo
+    final basePrice = widget.product.priceMap[_selectedWeight] ?? 0;
+    final basePriceText =
+        '\$${basePrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} COP';
+
+    final pricePerWeightText = '$basePriceText / $_selectedWeight';
+
     // Se usa Scaffold estándar para manejar el AppBar simple.
     return Scaffold(
-      // ********** APP BAR MODIFICADO **********
       appBar: AppBar(
         // El título del AppBar es el nombre del producto ('Avena en hojuela')
         title: Text(
@@ -212,12 +269,11 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      // ****************************************
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // ********** IMAGEN CENTRADA CON BORDES **********
+            // ********** IMAGEN CENTRADA CON BORDES (Sin cambios) **********
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
@@ -249,16 +305,15 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                 ),
               ),
             ),
-
             // *************************************************
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  // Precio y Precio por Peso
+                  // ********** PRECIO TOTAL ACTUALIZADO **********
                   Text(
-                    widget.product.price, // Precio Total (ej: $3.000 COP)
+                    currentTotalPrice, // Precio Total calculado
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -266,8 +321,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  // ********** PRECIO BASE POR PESO SELECCIONADO **********
                   Text(
-                    '${widget.product.price} / ${widget.product.weight}', // Precio por Peso (ej: $750 COP / 50g)
+                    pricePerWeightText, // Precio por Peso Base (ej: $750 COP / 50g)
                     style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 20),
@@ -287,24 +343,54 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                     runSpacing: 8.0,
                     children: widget.product.availableWeights.map((weight) {
                       final bool isSelected = weight == _selectedWeight;
+                      // Deshabilita el chip si el peso no tiene precio asociado en priceMap
+                      final bool isPriceAvailable = widget.product.priceMap
+                          .containsKey(weight);
+
                       return ChoiceChip(
                         label: Text(weight),
                         selected: isSelected,
+                        // ********** AJUSTES CLAVE AQUÍ **********
+                        // 1. Quitar el chulo:
+                        showCheckmark: false,
+                        // 2. Color cuando está seleccionado (Naranja):
                         selectedColor: _orangeColor.withAlpha(230),
+                        // 3. Color cuando NO está seleccionado (Fondo blanco con borde por defecto):
+                        backgroundColor: Colors.white,
+                        // 4. Color cuando está deshabilitado:
                         disabledColor: Colors.grey[200],
+                        // 5. Estilo del borde para simular un botón:
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: isSelected
+                                ? _orangeColor.withAlpha(230)
+                                : Colors
+                                      .grey
+                                      .shade300, // Borde naranja si está seleccionado
+                          ),
+                        ),
+                        // ****************************************
                         labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : _darkTextColor,
+                          color: isSelected
+                              ? Colors.white
+                              : (isPriceAvailable
+                                    ? _darkTextColor
+                                    : Colors.grey),
                           fontWeight: isSelected
                               ? FontWeight.bold
                               : FontWeight.normal,
                         ),
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _selectedWeight = weight;
-                            });
-                          }
-                        },
+                        // ********** ACTUALIZA EL PESO Y RECALCULA EL PRECIO **********
+                        onSelected: isPriceAvailable
+                            ? (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    _selectedWeight = weight;
+                                  });
+                                }
+                              }
+                            : null, // Deshabilita la selección si no hay precio
                       );
                     }).toList(),
                   ),
@@ -392,7 +478,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                   const Divider(color: Colors.grey, height: 10, thickness: 1),
                   const SizedBox(height: 10),
                   Text(
-                    widget.product.description,
+                    widget.product.description, // Usa el campo de descripción
                     style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
                 ],
@@ -404,7 +490,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     );
   }
 
-  // Widget auxiliar para los botones de cantidad
+  // Widget auxiliar para los botones de cantidad (Se mantiene igual, la actualización del precio se hace automáticamente con setState)
   Widget _buildQuantityButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -424,9 +510,10 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
 }
 
 // -------------------------------------------------------------------
-// --- COMPONENTE DE TARJETA DE PRODUCTO (_ProductCard) ---
-// --- MODIFICADO para navegar a la pantalla de detalles ---
+// --- EL RESTO DE CLASES (Se mantienen igual) ---
 // -------------------------------------------------------------------
+
+// --- COMPONENTE DE TARJETA DE PRODUCTO (_ProductCard) ---
 class _ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onAddToCart;
@@ -518,7 +605,7 @@ class _ProductCard extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// --- COMPONENTES DE FILTRO Y TIENDASCREEN (Se mantienen) ---
+// --- COMPONENTES DE FILTRO Y TIENDASCREEN (Se mantienen igual) ---
 // -------------------------------------------------------------------
 
 // --- Componente para la Opción del Menú de Filtros (_FilterOption)
