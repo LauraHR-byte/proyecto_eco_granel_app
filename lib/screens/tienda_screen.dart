@@ -1,9 +1,6 @@
-// Necesitarás importar estos dos paquetes para Firebase.
-// Asegúrate de añadirlos en tu archivo pubspec.yaml:
-//   firebase_core: ^latest_version
-//   cloud_firestore: ^latest_version
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eco_granel_app/screens/product_detail_screen.dart'; // Importación necesaria
 
 // --- Paleta de Colores (se mantiene igual) ---
 const Color _primaryGreen = Color(0xFF4CAF50); // Verde principal de ECO Granel
@@ -48,8 +45,7 @@ class Product {
   }
 }
 
-// --- Componente de Tarjeta de Producto (_ProductCard) (Se mantiene igual) ---
-// ... (Tu código de _ProductCard se mantiene sin cambios)
+// --- Componente de Tarjeta de Producto (_ProductCard) (MODIFICADO) ---
 class _ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onAddToCart;
@@ -65,11 +61,18 @@ class _ProductCard extends StatelessWidget {
         side: BorderSide.none,
       ),
       child: InkWell(
+        // ********** MODIFICACIÓN AQUÍ **********
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ver detalles de ${product.name}')),
+          // Navega a la nueva pantalla de detalles, pasando el ID del producto
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              // ¡CORRECTO! Ahora pasas productId: product.id
+              builder: (context) => ProductDetailScreen(productId: product.id),
+            ),
           );
         },
+
+        // ***************************************
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -136,12 +139,7 @@ class _ProductCard extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// --- Lista de Productos Simulados ELIMINADA ---
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
 // --- Componente para la Opción del Menú de Filtros (_FilterOption) (Se mantiene igual) ---
-// ... (Tu código de _FilterOption se mantiene sin cambios)
 class _FilterOption extends StatelessWidget {
   final String title;
   final bool isSelected;
@@ -186,7 +184,6 @@ class _FilterOption extends StatelessWidget {
 
 // -------------------------------------------------------------------
 // --- Componente para la Selección de Filtros a Pantalla Completa (Se mantiene igual) ---
-// ... (Tu código de _FilterFullScreenDialog se mantiene sin cambios)
 class _FilterFullScreenDialog extends StatelessWidget {
   final String currentCategory;
   final ValueChanged<String> onCategorySelected;
