@@ -1,15 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // PASO 1: Importar Firestore
 import 'package:eco_granel_app/screens/somos_screen.dart';
-// PASO 1: Importar la nueva pantalla de Ubicaciones
 import 'package:eco_granel_app/screens/ubicaciones_screen.dart';
-// Asegúrate de que la ruta sea correcta
 
 // Definimos el color verde primario para el tema (usando formato ARGB de 8 dígitos)
 const Color _primaryGreen = Color(0xFF4CAF50);
 // Definición del color oscuro para títulos (gris casi negro)
 const Color _unselectedDarkColor = Color(0xFF333333);
 
-// HomeScreen debe recibir el callback de navegación
+// PASO 2: Modelo de Producto (se recomienda mover a un archivo de modelos)
+class Product {
+  final String id;
+  final String name;
+  final String price; // Mantendremos el formato con COP/símbolo para mostrar
+  final String weight;
+  final String imagePath; // La ruta de la imagen
+
+  Product({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.weight,
+    required this.imagePath,
+  });
+
+  // Constructor factory para crear una instancia desde un documento de Firestore
+  factory Product.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final data = snapshot.data()!;
+    return Product(
+      id: snapshot.id,
+      name: data['name'] ?? 'Producto Desconocido',
+      // Supongamos que en Firestore guardamos el precio como 'price_display' y el peso como 'weight_display'
+      // Ajusta las claves según cómo las tengas en tu base de datos de Firestore.
+      price: data['price_display'] ?? '\$0 COP',
+      weight: data['weight_display'] ?? '100g',
+      // Nota: Si usas Firebase Storage, esta URL sería diferente.
+      // Aquí asumimos que la clave es 'image_path' y sigue siendo una ruta de Asset.
+      // Si migras a Storage, ajusta Image.asset a Image.network en _ProductCardUnified.
+      imagePath: data['image_path'] ?? 'assets/images/placeholder.jpg',
+    );
+  }
+}
+
+// -----------------------------------------------------
+// --- HomeScreen (Se mantiene sin cambios mayores) ---
+// -----------------------------------------------------
 class HomeScreen extends StatelessWidget {
   final Function(int) onNavigate;
 
@@ -26,10 +63,15 @@ class HomeScreen extends StatelessWidget {
             _DiscoverSection(onNavigate: onNavigate),
 
             // Sección "Productos Destacados"
-            // Pasamos el callback a _FeaturedProductsSection
+            // Ahora cargará los datos de Firebase
             _FeaturedProductsSection(onNavigate: onNavigate),
             Divider(
-              color: Color.fromRGBO(224, 224, 224, 100), // Color gris claro
+              color: const Color.fromRGBO(
+                224,
+                224,
+                224,
+                100,
+              ), // Color gris claro
               height: 50, // Espacio vertical que ocupa el divisor
               thickness: 5, // Grosor de la línea
               indent: 0, // Aseguramos que no haya indentación inicial
@@ -38,7 +80,7 @@ class HomeScreen extends StatelessWidget {
             // Sección "Quiénes Somos"
             const _AboutUsSection(),
 
-            SizedBox(height: 30), // Espacio final
+            const SizedBox(height: 30), // Espacio final
           ],
         ),
       ),
@@ -46,10 +88,9 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------
-// --- 1. Seccion Descubre (Banner Principal) ---
-// -----------------------------------------------------
-// AJUSTE: _DiscoverSection ahora acepta el callback de navegación
+// ----------------------------------------------------------------------
+// --- 1. Seccion Descubre (Se mantiene sin cambios) ---
+// ----------------------------------------------------------------------
 class _DiscoverSection extends StatelessWidget {
   final Function(int) onNavigate;
 
@@ -68,7 +109,7 @@ class _DiscoverSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: Color.fromRGBO(224, 224, 224, 100),
+          color: const Color.fromRGBO(224, 224, 224, 100),
           width: 4.0,
         ),
         boxShadow: const [
@@ -83,7 +124,7 @@ class _DiscoverSection extends StatelessWidget {
         children: [
           // Contenido del Banner
           Padding(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -138,8 +179,7 @@ class _DiscoverSection extends StatelessWidget {
   }
 }
 
-// Botón de Llamada a la Acción (Reutilizable)
-// AJUSTE: El botón ahora recibe un VoidCallback para la acción
+// Botón de Llamada a la Acción (Reutilizable - Se mantiene sin cambios)
 class _CtaButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed; // Nuevo callback para la acción del botón
@@ -171,44 +211,29 @@ class _CtaButton extends StatelessWidget {
 }
 
 // ----------------------------------------------------------------------
-// --- 2. Seccion Productos Destacados (Scroll Horizontal) ---
+// --- 2. Seccion Productos Destacados (CON FIREBASE) ---
 // ----------------------------------------------------------------------
+// PASO 3: Reemplazamos la lista estática por un StreamBuilder de Firestore
 class _FeaturedProductsSection extends StatelessWidget {
   final Function(int) onNavigate;
 
   const _FeaturedProductsSection({required this.onNavigate});
 
+  // Método para obtener el Stream de Productos Destacados
+  // Asume que tienes una colección llamada 'featured_products' en Firestore.
+  Stream<List<Product>> _getFeaturedProducts() {
+    return FirebaseFirestore.instance
+        .collection('featured_products')
+        // Puedes añadir .orderBy() o .limit() si es necesario
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList(),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Lista de datos simulada para productos
-    // Los datos de la home ahora incluyen el peso para un diseño unificado
-    const List<Map<String, String>> products = [
-      {
-        'name': 'Avena en Hojuelas',
-        'price': '\$750 COP',
-        'weight': '50g', // Agregamos peso
-        'imagePath': 'assets/images/avena-hojuelas.jpg',
-      },
-      {
-        'name': 'Harina de Almendra',
-        'price': '\$5.600 COP',
-        'weight': '50g', // Agregamos peso
-        'imagePath': 'assets/images/harina-de-almendras.jpg',
-      },
-      {
-        'name': 'Semillas de Chía',
-        'price': '\$1.400 COP',
-        'weight': '20g', // Agregamos peso
-        'imagePath': 'assets/images/chia.jpg',
-      },
-      {
-        'name': 'Garbanzos',
-        'price': '\$400 COP',
-        'weight': '50g', // Agregamos peso
-        'imagePath': 'assets/images/garbanzos.jpg',
-      },
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -224,27 +249,70 @@ class _FeaturedProductsSection extends StatelessWidget {
             ),
           ),
         ),
-        // Lista horizontal de productos
-        SizedBox(
-          // La altura debe ajustarse para el nuevo diseño de tarjeta unificada
-          height: 250,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              final product = products[index];
-              // **AJUSTE: Usamos el nuevo widget _ProductCardUnified**
-              return _ProductCardUnified(
-                name: product['name']!,
-                price: product['price']!,
-                weight: product['weight']!, // Pasamos el peso
-                imagePath: product['imagePath']!,
-                isFirst: index == 0,
-                // El onTap navega a la tienda (índice 2)
-                onTap: () => onNavigate(2),
+        // PASO 4: Usamos StreamBuilder para manejar el estado de la conexión con Firebase
+        StreamBuilder<List<Product>>(
+          stream: _getFeaturedProducts(),
+          builder: (context, snapshot) {
+            // Manejar errores
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    'Error al cargar productos: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
               );
-            },
-          ),
+            }
+
+            // Mostrar un indicador de carga mientras se obtienen los datos
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 250,
+                child: Center(
+                  child: CircularProgressIndicator(color: _primaryGreen),
+                ),
+              );
+            }
+
+            // Datos cargados exitosamente
+            final products = snapshot.data ?? [];
+
+            if (products.isEmpty) {
+              return const SizedBox(
+                height: 250,
+                child: Center(
+                  child: Text(
+                    'No hay productos destacados disponibles.',
+                    style: TextStyle(color: _unselectedDarkColor),
+                  ),
+                ),
+              );
+            }
+
+            // Lista horizontal de productos
+            return SizedBox(
+              height: 250,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  // Usamos el widget de tarjeta existente
+                  return _ProductCardUnified(
+                    name: product.name,
+                    price: product.price,
+                    weight: product.weight,
+                    imagePath: product.imagePath,
+                    isFirst: index == 0,
+                    // El onTap navega a la tienda (índice 2)
+                    onTap: () => onNavigate(2),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );
@@ -252,13 +320,12 @@ class _FeaturedProductsSection extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// --- NUEVO Componente de Tarjeta de Producto Unificado (Home) ---
+// --- Componente de Tarjeta de Producto Unificado (Se mantiene sin cambios) ---
 // -------------------------------------------------------------------
-// Basado en el diseño de TiendaScreen, pero sin el botón '+' y con InkWell
 class _ProductCardUnified extends StatelessWidget {
   final String name;
   final String price;
-  final String weight; // Nuevo: Para unificar el diseño de precio/peso
+  final String weight;
   final String imagePath;
   final bool isFirst;
   final VoidCallback onTap;
@@ -274,7 +341,6 @@ class _ProductCardUnified extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos Card y InkWell para replicar el diseño y animación de TiendaScreen
     return Container(
       height: 50,
       width: 150, // Mantenemos el ancho del Producto Destacado
@@ -309,6 +375,7 @@ class _ProductCardUnified extends StatelessWidget {
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
+                  // Mantenemos Image.asset, ajusta a Image.network si usas Firebase Storage
                   child: Image.asset(
                     imagePath,
                     height: 130, // Altura ajustada para el nuevo diseño
@@ -368,7 +435,7 @@ class _ProductCardUnified extends StatelessWidget {
 }
 
 // ----------------------------------------------------
-// --- 3. Seccion Quiénes Somos ---
+// --- 3. Seccion Quiénes Somos (Se mantiene sin cambios) ---
 // ----------------------------------------------------
 class _AboutUsSection extends StatelessWidget {
   const _AboutUsSection();
