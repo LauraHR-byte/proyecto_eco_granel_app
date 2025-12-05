@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // 1. Importaciones necesarias para Firebase (Firestore)
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eco_granel_app/screens/recipe_detail_screen.dart';
 
 // 2. Definimos el color verde primario para el tema
 const Color _primaryGreen = Color(0xFF4CAF50);
@@ -39,107 +40,6 @@ class Receta {
   }
 }
 
-// ==========================================================
-// ⭐️ PASO 1: Nueva Pantalla de Detalle de Receta
-// ==========================================================
-class RecipeDetailScreen extends StatelessWidget {
-  // Recibe el objeto Receta completo para mostrar sus detalles
-  final Receta receta;
-
-  const RecipeDetailScreen({super.key, required this.receta});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(receta.title), backgroundColor: _primaryGreen),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Imagen de la receta
-            Image.network(
-              receta.imageUrl,
-              height: 250,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              // Opcional: placeholder para cuando la imagen esté cargando
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  height: 250,
-                  color: Colors.grey[200],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: _primaryGreen,
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    receta.title,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: _unselectedDarkColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Categoría: ${receta.category.toUpperCase()}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: _primaryGreen,
-                    ),
-                  ),
-                  const Divider(height: 32, thickness: 1),
-                  const Text(
-                    "Descripción:",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: _unselectedDarkColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    receta.description,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: _unselectedDarkColor,
-                    ),
-                  ),
-                  // Aquí añadirías más detalles como ingredientes, pasos, etc.
-                  const SizedBox(height: 20),
-                  const Center(
-                    child: Text(
-                      "⭐ ¡Lógica de Ingredientes y Pasos va aquí! ⭐",
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // --- 4. Componente de la Tarjeta de Receta (RecetaCard) ---
 // Ahora acepta el ID de la receta y la URL de la imagen es remota.
 class RecetaCard extends StatelessWidget {
@@ -152,15 +52,14 @@ class RecetaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       // ==========================================================
-      // ⭐️ PASO 2: Lógica de Navegación Añadida
+      // ✅ PASO 2: Lógica de Navegación ACTIVADA
       // ==========================================================
       onTap: () {
-        debugPrint('Navegando a detalle de: ${receta.title}');
-        // Navega a la nueva pantalla (RecipeDetailScreen)
+        debugPrint('Acción de tarjeta de receta: ${receta.title}');
+        // Navegamos a RecipeDetailScreen, pasando el objeto Receta
         Navigator.push(
           context,
           MaterialPageRoute(
-            // Le pasamos el objeto 'receta' completo a la pantalla de detalle
             builder: (context) => RecipeDetailScreen(receta: receta),
           ),
         );
