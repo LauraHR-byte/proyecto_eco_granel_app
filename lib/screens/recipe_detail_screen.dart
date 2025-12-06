@@ -7,7 +7,7 @@ import 'package:eco_granel_app/screens/recetas_screen.dart';
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _lightGrey = Color(0xFFE0E0E0);
-const Color _orangeColor = Color(0xFFC76939);
+//const Color _orangeColor = Color(0xFFC76939);
 
 // La clase Receta debe estar definida en 'recetas_screen.dart'
 
@@ -709,9 +709,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             );
                           }),
 
-                          const SizedBox(height: 35),
+                          const SizedBox(height: 26),
 
-                          // Texto de cierre (Sin cursiva)
+                          // Texto de cierre
                           Padding(
                             padding: const EdgeInsets.only(
                               bottom: 10.0,
@@ -721,14 +721,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontFamily: "roboto",
-                                color: _orangeColor,
-                                fontWeight: FontWeight.bold, // AJUSTE: Negrilla
+                                color: _unselectedDarkColor,
+                                fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.start,
                             ),
                           ),
 
-                          const SizedBox(height: 35),
+                          const SizedBox(height: 26),
 
                           // --------------------------------------------------
                           // BOTONES DE FAVORITOS Y COMENTARIOS
