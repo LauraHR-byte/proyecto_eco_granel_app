@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eco_granel_app/screens/recetas_screen.dart';
 
 // Tus colores globales
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
+const Color _lightGrey = Color(0xFFE0E0E0);
 
-// Recibe: objeto Receta (id, title, description, imageUrl, category)
+// La clase Receta debe estar definida en 'recetas_screen.dart'
 
 // CONVERTIMOS A STATEFULWIDGET
 class RecipeDetailScreen extends StatefulWidget {
@@ -22,35 +24,69 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   // Estado inicial de favorito.
   bool _isFavorite = false;
 
-  // Función auxiliar para construir los ítems de info (tiempo, temperatura)
+  // Controlador para el campo de texto del nuevo comentario
+  final TextEditingController _commentController = TextEditingController();
+
+  User? _currentUser; // Se mantiene, ya que se usa en _showCommentModal
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCurrentUser();
+  }
+
+  // Función para obtener el usuario actual y escuchar cambios
+  void _checkCurrentUser() {
+    // Escucha los cambios de autenticación.
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  // 🛠️ FUNCIÓN DE WIDGET AJUSTADA: Usa Chip para apariencia de botón
   Widget _buildInfoItem(
     IconData icon,
     String label,
     String value,
     Color color,
   ) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 30),
-        const SizedBox(height: 4),
-        Text(
+    final isValid = value.isNotEmpty && value != 'N/A';
+
+    if (!isValid) {
+      return const SizedBox.shrink();
+    }
+
+    // ⭐ Retorna un Chip para darle una apariencia de botón
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Chip(
+        backgroundColor: color.withAlpha(38), // Fondo suave
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: color.withAlpha(128)),
+        ),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        label: Text(
           value,
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             fontFamily: "roboto",
-            color: color,
+            color: color, // Color del texto igual al ícono
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontFamily: "roboto",
-            color: _unselectedDarkColor,
-          ),
-        ),
-      ],
+        avatar: Icon(icon, color: color, size: 20),
+      ),
     );
   }
 
@@ -58,11 +94,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Widget _buildFavoritesSection() {
     return GestureDetector(
       onTap: () {
-        // Lógica de toggle para favoritos
         setState(() {
           _isFavorite = !_isFavorite;
         });
-        // Aquí iría la lógica para guardar/eliminar en Firestore
         final message = _isFavorite
             ? 'Receta agregada a Favoritos'
             : 'Receta eliminada de Favoritos';
@@ -79,13 +113,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             size: 24,
           ),
           const SizedBox(width: 8),
-          Text(
+          const Text(
             "Favoritos",
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontFamily: "roboto",
               color: _unselectedDarkColor,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.normal,
             ),
           ),
         ],
@@ -93,36 +127,287 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // Widget para el botón de comentarios
-  Widget _buildCommentButton() {
-    return GestureDetector(
-      onTap: () {
-        // Lógica para abrir la sección de comentarios o un modal
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Abrir sección de Comentarios')),
+  // 🆕 FUNCIÓN para mostrar el modal de comentarios (Ajustado)
+  void _showCommentModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Encabezado del Modal
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Comentarios de la Receta",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: "roboto",
+                        color: _unselectedDarkColor,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () =>
+                          Navigator.pop(context), // Cierra el modal
+                    ),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 10),
+
+                // Lista de Comentarios
+                Expanded(
+                  child: SingleChildScrollView(child: _buildCommentsList()),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ---------------------------------------------
+                // 🌟 FORMULARIO FIJO EN LA PARTE INFERIOR
+                // ---------------------------------------------
+                // Aquí se utiliza _currentUser para decidir qué mostrar
+                if (_currentUser != null)
+                  _buildCommentForm()
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
+                    child: Text(
+                      'Debes iniciar sesión para poder dejar un comentario.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.red.shade700,
+                        fontStyle: FontStyle.italic,
+                        fontFamily: 'roboto',
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         );
       },
+    );
+  }
+
+  // Widget para el botón de comentarios (sin cambios)
+  Widget _buildCommentButton() {
+    return GestureDetector(
+      onTap: _showCommentModal,
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            color: _unselectedDarkColor,
-            size: 24,
-          ),
+          Icon(Icons.comment, color: _unselectedDarkColor, size: 20),
           SizedBox(width: 8),
           Text(
             "Comentar",
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontFamily: "roboto",
               color: _unselectedDarkColor,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.normal,
             ),
           ),
         ],
       ),
     );
+  }
+
+  // WIDGET AUXILIAR PARA EL FORMULARIO DE COMENTARIOS (sin cambios)
+  Widget _buildCommentForm() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _commentController,
+            decoration: InputDecoration(
+              hintText: "Escribe tu comentario...",
+              fillColor: _lightGrey.withAlpha(128),
+              filled: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 15,
+                vertical: 10,
+              ),
+            ),
+            maxLines: null,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: _submitComment,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+            ),
+            child: const Icon(Icons.send),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // WIDGET AUXILIAR para la Lista de Comentarios (sin cambios)
+  Widget _buildCommentsList() {
+    // ... (código para construir la lista de comentarios)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('recetas')
+              .doc(widget.receta.id)
+              .collection('comments')
+              .orderBy('timestamp', descending: true)
+              .limit(10)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: _primaryGreen),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.0),
+                child: Center(
+                  child: Text("Sé el primero en comentar esta receta."),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: snapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                final commentData =
+                    snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                final commentText = commentData['text'] ?? 'Comentario vacío';
+                final userName = commentData['userName'] ?? 'Usuario Anónimo';
+                final timestamp = commentData['timestamp'] as Timestamp?;
+                final date = timestamp != null
+                    ? ' - ${DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch).toLocal().toString().split(' ')[0]}'
+                    : '';
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$userName$date',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: _primaryGreen,
+                        fontFamily: 'roboto',
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0, bottom: 10.0),
+                      child: Text(
+                        commentText,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: _unselectedDarkColor,
+                          fontFamily: 'roboto',
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1, color: _lightGrey),
+                    const SizedBox(height: 10),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // LÓGICA PARA ENVIAR EL COMENTARIO (sin cambios)
+  void _submitComment() async {
+    if (_currentUser == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Debes iniciar sesión para comentar.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final commentText = _commentController.text.trim();
+
+    if (commentText.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El comentario no puede estar vacío.')),
+      );
+      return;
+    }
+
+    final currentUserId = _currentUser!.uid;
+    final currentUserName =
+        _currentUser!.displayName ??
+        _currentUser!.email?.split('@')[0] ??
+        "Usuario Registrado";
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('recetas')
+          .doc(widget.receta.id)
+          .collection('comments')
+          .add({
+            'userId': currentUserId,
+            'userName': currentUserName,
+            'text': commentText,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+
+      if (!mounted) return;
+      _commentController.clear();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al enviar el comentario: $e')),
+      );
+    }
+  }
+
+  // Función auxiliar para capitalizar la primera letra de cada palabra (sin cambios)
+  String _capitalizeWords(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return '';
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 
   @override
@@ -130,16 +415,24 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ---------------- APP BAR ----------------
+      // ---------------- APP BAR (AJUSTADO) ----------------
       appBar: AppBar(
-        backgroundColor: _primaryGreen,
-        title: Text(
-          widget.receta.title,
-          style: const TextStyle(
-            fontFamily: "roboto",
-            fontWeight: FontWeight.w600,
+        // 1. Color del AppBar: Blanco
+        backgroundColor: Colors.white,
+        // 2. Título adaptable al tamaño
+        title: FittedBox(
+          child: Text(
+            widget.receta.title,
+            style: const TextStyle(
+              fontFamily: "roboto",
+              fontWeight: FontWeight.w600,
+              // Color del texto ajustado para ser visible en blanco
+              color: _unselectedDarkColor,
+            ),
           ),
         ),
+        // Iconos de la AppBar: ajustados para ser visibles en blanco
+        iconTheme: const IconThemeData(color: _unselectedDarkColor, size: 30),
       ),
 
       // ---------------- CUERPO ----------------
@@ -148,7 +441,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             .collection('recetas')
             .doc(widget.receta.id)
             .get(),
-
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -168,33 +460,34 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
 
-          // =====================================================
-          // 🛠️ EXTRACCIÓN DE DATOS ADICIONALES
-          // =====================================================
           final String prepTime =
-              data['prepTime'] ?? 'N/A'; // Tiempo de preparación
+              (data['prepTime'] as String?)?.trim() ?? 'N/A';
           final String ovenTemp =
-              data['ovenTemp'] ?? 'N/A'; // Temperatura del horno
+              (data['ovenTemp'] as String?)?.trim() ?? 'N/A';
 
-          // ARRAYS DESDE FIRESTORE
+          final String closingText =
+              (data['closingText'] as String?)?.trim() ??
+              '¡Gracias por probar esta receta!';
+
           final List ingredients = data['ingredients'] ?? [];
           final List steps = data['preparation'] ?? [];
+
+          final hasPrepTime = prepTime.isNotEmpty && prepTime != 'N/A';
+          final hasOvenTemp = ovenTemp.isNotEmpty && ovenTemp != 'N/A';
+          final bool shouldShowInfoSection = hasPrepTime || hasOvenTemp;
 
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // =====================================================
-                // 🖼️ IMAGEN PRINCIPAL (Ajuste de Border Radius y centrado)
-                // =====================================================
+                // 🖼️ IMAGEN PRINCIPAL
                 Center(
-                  // Centra el contenedor de la imagen
                   child: Padding(
-                    padding: const EdgeInsets.all(
-                      12.0,
-                    ), // Agrega un poco de margen
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18.0,
+                      vertical: 18.0,
+                    ),
                     child: ClipRRect(
-                      // Aplica el Border Radius
                       borderRadius: BorderRadius.circular(12.0),
                       child: Image.network(
                         widget.receta.imageUrl,
@@ -218,17 +511,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   ),
                 ),
 
-                // =====================================================
                 // 📌 CONTENIDO DETALLADO
-                // =====================================================
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --------------------------------------------------
-                      // TÍTULO, CATEGORÍA E INTERACCIONES
-                      // --------------------------------------------------
+                      // TÍTULO Y CATEGORÍA (sin cambios)
                       Text(
                         widget.receta.title,
                         style: const TextStyle(
@@ -240,7 +529,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        "Categoría: ${widget.receta.category.toUpperCase()}",
+                        "Categoría: ${_capitalizeWords(widget.receta.category)}",
                         style: const TextStyle(
                           fontSize: 16,
                           fontFamily: "roboto",
@@ -252,57 +541,51 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       const SizedBox(height: 16),
 
                       // --------------------------------------------------
-                      // 🌟 BOTONES DE FAVORITOS Y COMENTARIOS
+                      // TIEMPO Y TEMPERATURA (Ahora como Chips)
                       // --------------------------------------------------
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          _buildFavoritesSection(),
-                          const SizedBox(width: 30),
-                          _buildCommentButton(),
-                        ],
-                      ),
+                      if (shouldShowInfoSection) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            _buildInfoItem(
+                              Icons.timer_sharp,
+                              "Tiempo",
+                              prepTime,
+                              _primaryGreen,
+                            ),
+                            // if (hasPrepTime && hasOvenTemp)
+                            //   Container(...)
+                            _buildInfoItem(
+                              Icons.device_thermostat,
+                              "Temperatura",
+                              ovenTemp,
+                              Colors.orange.shade700,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                      ],
 
-                      const SizedBox(height: 16),
-                      const Divider(),
+                      // --------------------------------------------------
+                      // DIVISOR ANTES DE LA DESCRIPCIÓN
 
-                      // ==================================================
-                      // ⏱️ INFORMACIÓN ADICIONAL (TIEMPO Y TEMPERATURA)
-                      // ==================================================
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildInfoItem(
-                            Icons.timer_sharp,
-                            "PREPARACIÓN",
-                            prepTime, // Usando el dato de Firestore
-                            _primaryGreen,
+                      // DESCRIPCIÓN - TÍTULO
+                      // 3. Padding top de 12 para la descripción
+                      const Padding(
+                        padding: EdgeInsets.only(top: 20.0),
+                        child: Text(
+                          "Descripción:",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "roboto",
+                            color: _unselectedDarkColor,
                           ),
-                          _buildInfoItem(
-                            Icons.local_fire_department_sharp,
-                            "TEMPERATURA",
-                            ovenTemp, // Usando el dato de Firestore
-                            Colors.orange.shade700,
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 16),
-
-                      // --------------------------------------------------
-                      // DESCRIPCIÓN
-                      // --------------------------------------------------
-                      const Text(
-                        "Descripción:",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "roboto",
-                          color: _unselectedDarkColor,
                         ),
                       ),
                       const SizedBox(height: 10),
+                      // DESCRIPCIÓN - CONTENIDO
                       Text(
                         widget.receta.description,
                         style: const TextStyle(
@@ -312,9 +595,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ),
 
-                      // --------------------------------------------------
                       // INGREDIENTES
-                      // --------------------------------------------------
                       const SizedBox(height: 30),
                       const Text(
                         "Ingredientes:",
@@ -326,17 +607,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // 👇 CONTENIDO DE INGREDIENTES RESTAURADO (Línea 326)
+                      // 🌟 USO DE 'ingredients'
                       ...ingredients.map(
                         (item) => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: _primaryGreen,
-                                size: 20,
+                              Container(
+                                margin: const EdgeInsets.only(top: 8),
+                                width: 6.0,
+                                height: 6.0,
+                                decoration: const BoxDecoration(
+                                  color: _primaryGreen,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -355,9 +640,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ),
 
-                      // --------------------------------------------------
-                      // PASOS
-                      // --------------------------------------------------
+                      // PASOS (PREPARACIÓN)
                       const SizedBox(height: 35),
                       const Text(
                         "Preparación:",
@@ -369,7 +652,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 15),
-                      // 👇 CONTENIDO DE PASOS RESTAURADO (Línea 342)
+
+                      // PASOS DE PREPARACIÓN
+                      // 🌟 USO de 'steps'
                       ...steps.asMap().entries.map((entry) {
                         int index = entry.key;
                         String step = entry.value;
@@ -379,16 +664,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
-                                radius: 15,
-                                backgroundColor: _primaryGreen,
+                              SizedBox(
+                                width: 30,
                                 child: Text(
-                                  "${index + 1}",
+                                  "${index + 1}.",
                                   style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
+                                    color: _primaryGreen,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                     fontFamily: "roboto",
                                   ),
+                                  textAlign: TextAlign.start,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -408,7 +694,39 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         );
                       }),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 35),
+
+                      // Texto de cierre (sin cambios, ya usa closingText)
+                      Text(
+                        closingText,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          fontFamily: "roboto",
+                          color: _unselectedDarkColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 35),
+
+                      // --------------------------------------------------
+                      // BOTONES DE FAVORITOS Y COMENTARIOS
+                      // --------------------------------------------------
+                      const Divider(),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          _buildFavoritesSection(),
+                          const SizedBox(width: 30),
+                          _buildCommentButton(),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // --------------------------------------------------
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
