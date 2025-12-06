@@ -7,6 +7,7 @@ import 'package:eco_granel_app/screens/recetas_screen.dart';
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _lightGrey = Color(0xFFE0E0E0);
+const Color _orangeColor = Color(0xFFC76939);
 
 // La clase Receta debe estar definida en 'recetas_screen.dart'
 
@@ -512,223 +513,244 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
 
                 // 📌 CONTENIDO DETALLADO
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // TÍTULO Y CATEGORÍA (sin cambios)
-                      Text(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // TÍTULO DEBAJO DE LA IMAGEN (AJUSTADO: Fondo Blanco, Texto oscuro, alineado a la izquierda)
+                    Container(
+                      // ⭐ CAMBIO CLAVE: Fondo blanco
+                      color: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 20.0,
+                      ), // Padding horizontal
+                      width: double
+                          .infinity, // Asegura que ocupe todo el ancho disponible
+                      child: Text(
                         widget.receta.title,
+                        // ⭐ AJUSTE: Eliminado 'textAlign: TextAlign.center'
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           fontFamily: "roboto",
+                          // ⭐ CAMBIO CLAVE: Color del texto a oscuro para contraste
                           color: _unselectedDarkColor,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Categoría: ${_capitalizeWords(widget.receta.category)}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: "roboto",
-                          fontWeight: FontWeight.w600,
-                          color: _primaryGreen,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // --------------------------------------------------
-                      // TIEMPO Y TEMPERATURA (Ahora como Chips)
-                      // --------------------------------------------------
-                      if (shouldShowInfoSection) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            _buildInfoItem(
-                              Icons.timer_sharp,
-                              "Tiempo",
-                              prepTime,
-                              _primaryGreen,
-                            ),
-                            // if (hasPrepTime && hasOvenTemp)
-                            //   Container(...)
-                            _buildInfoItem(
-                              Icons.device_thermostat,
-                              "Temperatura",
-                              ovenTemp,
-                              Colors.orange.shade700,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-
-                      // --------------------------------------------------
-                      // DIVISOR ANTES DE LA DESCRIPCIÓN
-
-                      // DESCRIPCIÓN - TÍTULO
-                      // 3. Padding top de 12 para la descripción
-                      const Padding(
-                        padding: EdgeInsets.only(top: 20.0),
-                        child: Text(
-                          "Descripción:",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "roboto",
-                            color: _unselectedDarkColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // DESCRIPCIÓN - CONTENIDO
-                      Text(
-                        widget.receta.description,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: "roboto",
-                          color: _unselectedDarkColor,
-                        ),
-                      ),
-
-                      // INGREDIENTES
-                      const SizedBox(height: 30),
-                      const Text(
-                        "Ingredientes:",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "roboto",
-                          color: _unselectedDarkColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // 🌟 USO DE 'ingredients'
-                      ...ingredients.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.only(top: 8),
-                                width: 6.0,
-                                height: 6.0,
-                                decoration: const BoxDecoration(
-                                  color: _primaryGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  item,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    height: 1.4,
-                                    fontFamily: "roboto",
-                                    color: _unselectedDarkColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // PASOS (PREPARACIÓN)
-                      const SizedBox(height: 35),
-                      const Text(
-                        "Preparación:",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "roboto",
-                          color: _unselectedDarkColor,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // PASOS DE PREPARACIÓN
-                      // 🌟 USO de 'steps'
-                      ...steps.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        String step = entry.value;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 30,
-                                child: Text(
-                                  "${index + 1}.",
-                                  style: const TextStyle(
-                                    color: _primaryGreen,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: "roboto",
-                                  ),
-                                  textAlign: TextAlign.start,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  step,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    height: 1.4,
-                                    fontFamily: "roboto",
-                                    color: _unselectedDarkColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-
-                      const SizedBox(height: 35),
-
-                      // Texto de cierre (sin cambios, ya usa closingText)
-                      Text(
-                        closingText,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          fontFamily: "roboto",
-                          color: _unselectedDarkColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 35),
-
-                      // --------------------------------------------------
-                      // BOTONES DE FAVORITOS Y COMENTARIOS
-                      // --------------------------------------------------
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                    ),
+                    // Usamos Padding para el resto del contenido y alinearlo con el contenedor
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildFavoritesSection(),
-                          const SizedBox(width: 30),
-                          _buildCommentButton(),
+                          const SizedBox(
+                            height: 10,
+                          ), // Separación después del título
+                          // CATEGORÍA (sin cambios)
+                          Text(
+                            "Categoría: ${_capitalizeWords(widget.receta.category)}",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontFamily: "roboto",
+                              fontWeight: FontWeight.w600,
+                              color: _primaryGreen,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // --------------------------------------------------
+                          // TIEMPO Y TEMPERATURA (Ahora como Chips)
+                          // --------------------------------------------------
+                          if (shouldShowInfoSection) ...[
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                _buildInfoItem(
+                                  Icons.timer_sharp,
+                                  "Tiempo",
+                                  prepTime,
+                                  _primaryGreen,
+                                ),
+                                _buildInfoItem(
+                                  Icons.device_thermostat,
+                                  "Temperatura",
+                                  ovenTemp,
+                                  Colors.orange.shade700,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+
+                          // --------------------------------------------------
+                          // DESCRIPCIÓN - TÍTULO
+                          const Padding(
+                            padding: EdgeInsets.only(top: 20.0),
+                            child: Text(
+                              "Descripción:",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "roboto",
+                                color: _unselectedDarkColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // DESCRIPCIÓN - CONTENIDO
+                          Text(
+                            widget.receta.description,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontFamily: "roboto",
+                              color: _unselectedDarkColor,
+                            ),
+                          ),
+
+                          // INGREDIENTES
+                          const SizedBox(height: 30),
+                          const Text(
+                            "Ingredientes:",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "roboto",
+                              color: _unselectedDarkColor,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // 🌟 USO DE 'ingredients'
+                          ...ingredients.map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 8),
+                                    width: 6.0,
+                                    height: 6.0,
+                                    decoration: const BoxDecoration(
+                                      color: _primaryGreen,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        height: 1.4,
+                                        fontFamily: "roboto",
+                                        color: _unselectedDarkColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // PASOS (PREPARACIÓN)
+                          const SizedBox(height: 35),
+                          const Text(
+                            "Preparación:",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "roboto",
+                              color: _unselectedDarkColor,
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+
+                          // PASOS DE PREPARACIÓN
+                          // 🌟 USO de 'steps'
+                          ...steps.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            String step = entry.value;
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 30,
+                                    child: Text(
+                                      "${index + 1}.",
+                                      style: const TextStyle(
+                                        color: _primaryGreen,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: "roboto",
+                                      ),
+                                      textAlign: TextAlign.start,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      step,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        height: 1.4,
+                                        fontFamily: "roboto",
+                                        color: _unselectedDarkColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+
+                          const SizedBox(height: 35),
+
+                          // Texto de cierre (Sin cursiva)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: 10.0,
+                            ), // Padding opcional para espacio adicional
+                            child: Text(
+                              closingText,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontFamily: "roboto",
+                                color: _orangeColor,
+                                fontWeight: FontWeight.bold, // AJUSTE: Negrilla
+                              ),
+                              textAlign: TextAlign.start,
+                            ),
+                          ),
+
+                          const SizedBox(height: 35),
+
+                          // --------------------------------------------------
+                          // BOTONES DE FAVORITOS Y COMENTARIOS
+                          // --------------------------------------------------
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              _buildFavoritesSection(),
+                              const SizedBox(width: 30),
+                              _buildCommentButton(),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // --------------------------------------------------
+                          const SizedBox(height: 20),
                         ],
                       ),
-                      const SizedBox(height: 16),
-
-                      // --------------------------------------------------
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
