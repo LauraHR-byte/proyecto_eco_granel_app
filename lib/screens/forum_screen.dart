@@ -111,7 +111,7 @@ class _CommentItem extends StatelessWidget {
 }
 
 // ------------------------------------
-// --- Modal de Comentarios (CORREGIDO: 'mounted') ---
+// --- Modal de Comentarios (AJUSTADO: Uso de ModalBottomSheet) ---
 // ------------------------------------
 class CommentsModal extends StatefulWidget {
   final String postId;
@@ -175,123 +175,150 @@ class _CommentsModalState extends State<CommentsModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(18.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          padding: const EdgeInsets.all(18.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Encabezado
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    // 💡 AJUSTE CLAVE: Eliminamos el 'Dialog' y definimos el contenido para el BottomSheet.
+    // Usamos Column y SingleChildScrollView dentro del body del BottomSheet, pero aquí
+    // ya estamos dentro del widget retornado por showModalBottomSheet.
+    return Container(
+      // Usamos MediaQuery para que ocupe el 80% de la altura y evitar el teclado
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: const BoxDecoration(
+        color: Colors.white, // Fondo blanco para el modal
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18.0).copyWith(
+          // Espacio extra para el teclado en la parte inferior si es necesario
+          bottom: 18.0 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Encabezado (Manija + Título)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Comentarios',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontFamily: "roboto",
+                    fontWeight: FontWeight.bold,
+                    color: _primaryGreen,
+                  ),
+                ),
+                // Botón de cierre que ya no es un 'Dialog', pero sigue cerrando el Modal.
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const Divider(),
+
+            // Lista de Comentarios Existentes (StreamBuilder)
+            Expanded(
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('comments')
+                    .where('postId', isEqualTo: widget.postId)
+                    .orderBy('timestamp', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(
+                      child: Text('Error al cargar comentarios.'),
+                    );
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: _primaryGreen),
+                    );
+                  }
+
+                  final comments = snapshot.data!.docs
+                      .map((doc) => CommentData.fromFirestore(doc))
+                      .toList();
+
+                  if (comments.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'Sé el primero en comentar.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: comments.length,
+                    // Se usa Padding.zero para eliminar el padding vertical extra
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      indent: 48,
+                    ), // Indentado para alinear con el texto del comentario
+                    itemBuilder: (context, index) {
+                      return _CommentItem(comment: comments[index]);
+                    },
+                  );
+                },
+              ),
+            ),
+            const Divider(),
+
+            // Campo para Añadir Nuevo Comentario
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Row(
                 children: [
-                  const Text(
-                    'Comentarios',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontFamily: "roboto",
-                      fontWeight: FontWeight.bold,
-                      color: _primaryGreen,
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: InputDecoration(
+                        hintText: currentUser != null
+                            ? 'Añadir un comentario...'
+                            : 'Inicia sesión para comentar',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                        fillColor: Colors.grey[200],
+                        filled: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 10,
+                        ),
+                      ),
+                      minLines: 1,
+                      maxLines: 4,
+                      enabled:
+                          currentUser != null, // Deshabilita si no hay usuario
                     ),
                   ),
+                  const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.send, color: _primaryGreen),
+                    onPressed: currentUser != null ? _addComment : null,
                   ),
                 ],
               ),
-              const Divider(),
-
-              // Lista de Comentarios Existentes (StreamBuilder)
-              Expanded(
-                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: FirebaseFirestore.instance
-                      .collection('comments')
-                      .where('postId', isEqualTo: widget.postId)
-                      .orderBy('timestamp', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return const Center(
-                        child: Text('Error al cargar comentarios.'),
-                      );
-                    }
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: _primaryGreen),
-                      );
-                    }
-
-                    final comments = snapshot.data!.docs
-                        .map((doc) => CommentData.fromFirestore(doc))
-                        .toList();
-
-                    if (comments.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'Sé el primero en comentar.',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: comments.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        return _CommentItem(comment: comments[index]);
-                      },
-                    );
-                  },
-                ),
-              ),
-              const Divider(),
-
-              // Campo para Añadir Nuevo Comentario
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _commentController,
-                        decoration: InputDecoration(
-                          hintText: currentUser != null
-                              ? 'Añadir un comentario...'
-                              : 'Inicia sesión para comentar',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide.none,
-                          ),
-                          fillColor: Colors.grey[200],
-                          filled: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 10,
-                          ),
-                        ),
-                        minLines: 1,
-                        maxLines: 4,
-                        enabled:
-                            currentUser !=
-                            null, // Deshabilita si no hay usuario
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.send, color: _primaryGreen),
-                      onPressed: currentUser != null ? _addComment : null,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -299,7 +326,7 @@ class _CommentsModalState extends State<CommentsModal> {
 }
 
 // ------------------------------------
-// --- Barra de Reacciones (CORREGIDO: 'context.mounted') ---
+// --- Barra de Reacciones (AJUSTADO: Solo la función _showCommentsModal) ---
 // ------------------------------------
 class ReactionBar extends StatelessWidget {
   final String postId;
@@ -385,9 +412,14 @@ class ReactionBar extends StatelessWidget {
     }
   }
 
+  // 💡 AJUSTE CLAVE: Cambiamos showDialog por showModalBottomSheet
   void _showCommentsModal(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled:
+          true, // Importante para que ocupe gran parte de la pantalla y el teclado
+      backgroundColor: Colors
+          .transparent, // Necesario para ver el BorderRadius del Container
       builder: (BuildContext context) {
         return CommentsModal(postId: postId);
       },
