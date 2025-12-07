@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // PASO 1: Importar Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eco_granel_app/screens/somos_screen.dart';
 import 'package:eco_granel_app/screens/ubicaciones_screen.dart';
 
@@ -63,7 +63,6 @@ class HomeScreen extends StatelessWidget {
             _DiscoverSection(onNavigate: onNavigate),
 
             // Sección "Productos Destacados"
-            // Ahora cargará los datos de Firebase
             _FeaturedProductsSection(onNavigate: onNavigate),
             Divider(
               color: const Color.fromRGBO(
@@ -77,7 +76,7 @@ class HomeScreen extends StatelessWidget {
               indent: 0, // Aseguramos que no haya indentación inicial
               endIndent: 0, // Aseguramos que no haya indentación final
             ),
-            // Sección "Quiénes Somos"
+            // Sección "Quiénes Somos" (AJUSTADA VISUALMENTE)
             const _AboutUsSection(),
 
             const SizedBox(height: 30), // Espacio final
@@ -435,7 +434,7 @@ class _ProductCardUnified extends StatelessWidget {
 }
 
 // ----------------------------------------------------
-// --- 3. Seccion Quiénes Somos (Se mantiene sin cambios) ---
+// --- 3. Seccion Quiénes Somos (Con botón ElevatedButton y centrado) ---
 // ----------------------------------------------------
 class _AboutUsSection extends StatelessWidget {
   const _AboutUsSection();
@@ -443,20 +442,21 @@ class _AboutUsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Título sin icono
           const Text(
             "¿Quiénes Somos?",
             style: TextStyle(
               fontFamily: "roboto",
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: _unselectedDarkColor,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Imagen "Quiénes Somos"
           Center(
@@ -472,7 +472,6 @@ class _AboutUsSection extends StatelessWidget {
                   height: 180,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    // CORREGIDO: Usando .withAlpha(51) en caso de error
                     color: _primaryGreen.withAlpha(51),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -485,13 +484,11 @@ class _AboutUsSection extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
           Container(
-            padding: const EdgeInsets.all(6.0),
-            decoration: const BoxDecoration(
-              color: Colors.white, // Fondo sutil
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            decoration: const BoxDecoration(color: Colors.white),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -500,19 +497,19 @@ class _AboutUsSection extends StatelessWidget {
                   "Nacimos con la misión de promover un consumo consciente y sostenible, ofreciendo "
                   "alimentos frescos y de alta calidad a granel.",
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontFamily: "roboto",
                     height: 1.5,
                     color: _unselectedDarkColor,
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 10),
                 Text(
                   "Te invitamos a comprar solo la cantidad que necesitas, reduciendo el desperdicio"
                   "y el impacto ambiental. Más que una tienda, somos un espacio que inspira a vivir"
                   "de manera más saludable y en armonia con el planeta.",
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontFamily: "roboto",
                     height: 1.5,
                     color: _unselectedDarkColor,
@@ -521,25 +518,53 @@ class _AboutUsSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          // Botón para ir a la página completa de "Sobre Nosotros"
+          const SizedBox(height: 20),
+
+          // CAMBIO CLAVE: Utilizamos ElevatedButton con estilo primario y centrado
           Center(
-            child: TextButton(
+            child: ElevatedButton(
               onPressed: () {
-                // Implementación de navegación a la nueva pantalla SomosScreen
+                // Navegación a SomosScreen
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SomosScreen()),
                 );
               },
-              child: const Text(
-                "Leer más sobre nuestra misión... →",
-                style: TextStyle(
-                  color: _primaryGreen,
-                  fontFamily: "roboto",
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              // Estilo idéntico a _CtaButton (Ver Ubicaciones)
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 25,
+                  vertical: 12,
                 ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 2,
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize
+                    .min, // Ajuste para que el botón no ocupe todo el ancho
+                children: [
+                  // Texto del botón
+                  Text(
+                    "Leer más sobre nuestra misión",
+                    style: TextStyle(
+                      fontFamily: "roboto",
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  // Icono de flecha tipo iOS al final
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors
+                        .white, // El color debe ser blanco ya que el fondo es verde
+                    size: 16,
+                  ),
+                ],
               ),
             ),
           ),
