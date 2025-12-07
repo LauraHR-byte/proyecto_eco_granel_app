@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-// 1. Importaciones necesarias para Firebase (Firestore)
+// 1. Importaciones necesarias para Firebase (Firestore y Auth)
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ✅ ¡Añadido!
 import 'package:eco_granel_app/screens/recipe_detail_screen.dart';
 
 // 2. Definimos el color verde primario para el tema
@@ -8,7 +9,9 @@ const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 
 // --- 3. Modelo de Datos para Recetas (Receta) ---
-// Este modelo nos ayuda a mapear los documentos de Firestore a objetos Dart.
+// NOTA: El constructor 'fromFirestore' se actualiza para funcionar tanto con la
+// colección 'recetas' (que tiene 'category') como con la subcolección 'favorites'
+// (que solo tiene los campos guardados: title, imageUrl, description).
 class Receta {
   final String id; // ID del documento en Firestore
   final String title;
@@ -28,35 +31,32 @@ class Receta {
   factory Receta.fromFirestore(DocumentSnapshot doc) {
     // Es mejor asegurar que el tipo de datos sea Map<String, dynamic>
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    // **Ajuste clave:** 'recipeId' es el ID de la receta en la subcolección 'favorites'
+    final recipeId = data['recipeId'] ?? doc.id;
+
     return Receta(
-      id: doc.id,
+      id: recipeId,
       title: data['title'] ?? 'Sin título',
       description: data['description'] ?? 'Sin descripción',
-      imageUrl:
-          data['imageUrl'] ??
-          'assets/images/placeholder.jpg', // Usar URL real o de almacenamiento
-      category: data['category'] ?? 'otros',
+      imageUrl: data['imageUrl'] ?? 'assets/images/placeholder.jpg',
+      // En la pestaña Favoritos, el campo 'category' no existe, así que usamos un valor por defecto.
+      category: data['category'] ?? 'Favorito',
     );
   }
 }
 
 // --- 4. Componente de la Tarjeta de Receta (RecetaCard) ---
-// Ahora acepta el ID de la receta y la URL de la imagen es remota.
 class RecetaCard extends StatelessWidget {
   final Receta receta; // Usamos el objeto Receta completo
-  // Aquí podrías agregar un callback para manejar el estado de favorito
 
   const RecetaCard({super.key, required this.receta});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      // ==========================================================
-      // ✅ PASO 2: Lógica de Navegación ACTIVADA
-      // ==========================================================
       onTap: () {
         debugPrint('Acción de tarjeta de receta: ${receta.title}');
-        // Navegamos a RecipeDetailScreen, pasando el objeto Receta
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -76,16 +76,14 @@ class RecetaCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                // Contenedor de la Imagen: Ahora carga desde una URL (NetworkImage)
+                // Contenedor de la Imagen: Carga desde una URL
                 Container(
                   height: 100,
                   width: 100,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     image: DecorationImage(
-                      // Usamos NetworkImage si la URL es de Firebase Storage o externa
                       image: NetworkImage(receta.imageUrl),
-                      // O podrías usar Image.network
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -147,8 +145,6 @@ class Recetas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Es CRUCIAL que Firebase esté inicializado antes de este punto.
-    // Generalmente se hace en main() o en el widget padre de la aplicación.
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -211,7 +207,7 @@ class Recetas extends StatelessWidget {
           children: [
             _RecetasListTab(category: 'desayunos'),
             _RecetasListTab(category: 'snacks'),
-            _FavoritosTab(),
+            _FavoritosTab(), // <-- Lógica de usuario aquí
           ],
         ),
       ),
@@ -220,57 +216,47 @@ class Recetas extends StatelessWidget {
 }
 
 // --- 6. Componente Reutilizable para Pestañas con Carga de Firestore ---
-// Reemplaza _DesayunosTab y _SnacksTab con este widget dinámico.
 class _RecetasListTab extends StatelessWidget {
   final String category; // 'desayunos' o 'snacks'
 
   const _RecetasListTab({required this.category});
 
-  // Referencia a la colección de Firestore
   static final CollectionReference _recetasCollection = FirebaseFirestore
       .instance
       .collection('recetas');
 
   @override
   Widget build(BuildContext context) {
-    // StreamBuilder escucha los cambios en tiempo real en la base de datos
     return StreamBuilder<QuerySnapshot>(
-      // Consulta a Firestore: obtenemos documentos donde 'category' es igual al valor de la pestaña
       stream: _recetasCollection
           .where('category', isEqualTo: category)
           .snapshots(),
 
       builder: (context, snapshot) {
-        // Estado de error
         if (snapshot.hasError) {
           return Center(
             child: Text('Error al cargar las recetas: ${snapshot.error}'),
           );
         }
 
-        // Estado de carga (conexión esperando)
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: _primaryGreen),
           );
         }
 
-        // Estado de datos: mapeamos los documentos a una lista de objetos Receta
         final List<Receta> recetas = snapshot.data!.docs
             .map(
-              // El casteo es necesario para evitar errores de tipo en tiempo de ejecución
               (doc) => Receta.fromFirestore(doc as DocumentSnapshot<Object?>),
             )
             .toList();
 
-        // Si no hay recetas
         if (recetas.isEmpty) {
           return Center(
             child: Text('No hay recetas en la categoría de $category.'),
           );
         }
 
-        // Mostrar la lista de recetas
         return ListView.builder(
           itemCount: recetas.length,
           itemBuilder: (context, index) {
@@ -282,36 +268,151 @@ class _RecetasListTab extends StatelessWidget {
   }
 }
 
-// --- Contenido de la Pestaña FAVORITOS (Se mantiene igual, la lógica de favoritos necesitaría autenticación/estado local) ---
-class _FavoritosTab extends StatelessWidget {
+// ----------------------------------------------------------------------
+// 7. Componente de la Pestaña FAVORITOS (CORREGIDO para usar el userId)
+// ----------------------------------------------------------------------
+class _FavoritosTab extends StatefulWidget {
   const _FavoritosTab();
 
   @override
+  State<_FavoritosTab> createState() => __FavoritosTabState();
+}
+
+class __FavoritosTabState extends State<_FavoritosTab> {
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🌟 Suscribirse a los cambios de autenticación
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+      }
+    });
+    // Obtener el estado inicial del usuario
+    _currentUser = FirebaseAuth.instance.currentUser;
+  }
+
+  // 🛠️ Función que devuelve la consulta a Firestore
+  Stream<QuerySnapshot>? _getFavoritesStream() {
+    // Si no hay usuario autenticado, no hay stream que devolver.
+    if (_currentUser == null) {
+      return null;
+    }
+
+    final userId = _currentUser!.uid;
+
+    // 🎯 Consulta correcta: userFavorites/{userId}/favorites
+    return FirebaseFirestore.instance
+        .collection('userFavorites')
+        .doc(userId)
+        .collection('favorites') // Subcolección específica
+        .orderBy(
+          'timestamp',
+          descending: true,
+        ) // Ordenamos por el timestamp de guardado
+        .snapshots();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.star, color: _primaryGreen, size: 40),
-          SizedBox(height: 10),
-          Text(
-            "¡Aún no tienes recetas favoritas!",
-            style: TextStyle(
-              fontSize: 18,
-              fontFamily: "roboto",
-              color: Colors.grey,
+    // Si no hay usuario, mostramos un mensaje pidiendo iniciar sesión
+    if (_currentUser == null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock, color: _unselectedDarkColor, size: 40),
+            SizedBox(height: 10),
+            Text(
+              "Inicia Sesión para ver tus Favoritos",
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: "roboto",
+                color: _unselectedDarkColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            "Marca la estrella ⭐ para guardarlas aquí.",
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: "roboto",
-              color: Colors.grey,
+            SizedBox(height: 5),
+            Text(
+              "Una vez iniciada la sesión, aparecerán aquí.",
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: "roboto",
+                color: Colors.grey,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      );
+    }
+
+    // 🚀 Si hay usuario, construimos el StreamBuilder
+    return StreamBuilder<QuerySnapshot>(
+      stream: _getFavoritesStream(),
+      builder: (context, snapshot) {
+        // Estado de error
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Error al cargar favoritos: ${snapshot.error}'),
+          );
+        }
+
+        // Estado de carga
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: _primaryGreen),
+          );
+        }
+
+        // Mapeamos los documentos de la subcolección 'favorites' a Receta
+        final List<Receta> recetasFavoritas = snapshot.data!.docs
+            .map(
+              // Usamos el constructor, el cual mapeará los campos guardados
+              (doc) => Receta.fromFirestore(doc as DocumentSnapshot<Object?>),
+            )
+            .toList();
+
+        // Si no hay recetas favoritas
+        if (recetasFavoritas.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.star, color: _primaryGreen, size: 40),
+                SizedBox(height: 10),
+                Text(
+                  "¡Aún no tienes recetas favoritas!",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontFamily: "roboto",
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  "Marca la estrella ⭐ en cualquier receta para guardarla aquí.",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: "roboto",
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Mostrar la lista de recetas favoritas
+        return ListView.builder(
+          itemCount: recetasFavoritas.length,
+          itemBuilder: (context, index) {
+            return RecetaCard(receta: recetasFavoritas[index]);
+          },
+        );
+      },
     );
   }
 }

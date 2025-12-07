@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eco_granel_app/login/inicio_screen.dart';
 import 'package:eco_granel_app/screens/edit_profile_screen.dart';
 import 'package:eco_granel_app/screens/guardado_screen.dart';
+import 'package:eco_granel_app/screens/like_screen.dart'; // Importación necesaria para LikesScreen
 import 'privacidad_screen.dart';
 import 'condiciones_screen.dart';
 
@@ -14,31 +15,8 @@ const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _orangeColor = Color(0xFFC76939);
 
 // ----------------------------------------------------------------------
-// NUEVO: Placeholder para LikesScreen
+// COMPONENTES REUTILIZABLES
 // ----------------------------------------------------------------------
-
-class LikesScreen extends StatelessWidget {
-  const LikesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tus Likes'),
-        backgroundColor: _orangeColor,
-      ),
-      body: const Center(
-        child: Text(
-          'Aquí se mostrarán los productos y recetas que te han gustado.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, color: _unselectedDarkColor),
-        ),
-      ),
-    );
-  }
-}
-
-// --- Componentes Reutilizables ---
 
 class _ProfileOptionRow extends StatelessWidget {
   final String title;
@@ -151,7 +129,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
-  // FUNCIÓN AÑADIDA: Navegación a LikesScreen
+  // MODIFICACIÓN CLAVE 1: Función de navegación a LikesScreen
   void _navigateToLikes() {
     Navigator.push(
       context,
@@ -285,7 +263,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           elevation:
                               0, // Quitamos la elevación para que parezca más plano
                         ),
-                        child: Text(
+                        child: const Text(
                           "Cancelar",
                           style: TextStyle(
                             fontFamily: "roboto",
@@ -344,11 +322,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
               icon: Icons.bookmark_border,
               onTap: _navigateToGuardado,
             ),
-            // CAMBIO AQUÍ: Usando la nueva función de navegación _navigateToLikes
+            // MODIFICACIÓN CLAVE 2: Llama a la función de navegación a LikesScreen
             _ProfileOptionRow(
               title: "Likes",
               icon: Icons.favorite_border,
-              onTap: _navigateToLikes,
+              onTap: _navigateToLikes, // <-- ¡Actualizado para navegar!
             ),
             _ProfileOptionRow(
               title: "Mis pedidos",

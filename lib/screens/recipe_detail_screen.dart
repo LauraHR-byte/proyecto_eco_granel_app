@@ -2,16 +2,177 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eco_granel_app/screens/recetas_screen.dart';
+import 'dart:developer';
 
 // Tus colores globales
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _lightGrey = Color(0xFFE0E0E0);
-//const Color _orangeColor = Color(0xFFC76939);
 
-// La clase Receta debe estar definida en 'recetas_screen.dart'
+// NOTA: La clase Receta debe estar definida en 'recetas_screen.dart' o importada.
 
-// CONVERTIMOS A STATEFULWIDGET
+// -----------------------------------------------------------------
+// 🛠️ WIDGET CLAVE: FavoriteButton (MODIFICADO para nueva estructura)
+// Se almacenan los datos de la receta en la colección de favoritos del usuario.
+// Estructura de guardado: userFavorites/{userId}/favorites/{recipeId}
+// -----------------------------------------------------------------
+class FavoriteButton extends StatefulWidget {
+  final String recipeId;
+  final User? currentUser;
+  // 🌟 CAMPOS AÑADIDOS para almacenar en la colección del usuario
+  final String title;
+  final String imageUrl;
+  final String description;
+
+  const FavoriteButton({
+    super.key,
+    required this.recipeId,
+    required this.currentUser,
+    required this.title,
+    required this.imageUrl,
+    required this.description,
+  });
+
+  @override
+  State<FavoriteButton> createState() => _FavoriteButtonState();
+}
+
+class _FavoriteButtonState extends State<FavoriteButton> {
+  // Estado local que solo reconstruye este widget
+  bool _isFavorite = false;
+
+  // 🛠️ FUNCIÓN AUXILIAR: Obtiene la referencia al documento favorito
+  DocumentReference<Map<String, dynamic>> _getFavoriteDocRef(String userId) {
+    // NUEVA RUTA: userFavorites/{userId}/favorites/{recipeId}
+    return FirebaseFirestore.instance
+        .collection('userFavorites') // Colección Raíz de Favoritos por Usuario
+        .doc(userId)
+        .collection('favorites') // Subcolección de Recetas Favoritas
+        .doc(widget.recipeId); // Documento con el ID de la Receta
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Iniciar la verificación del estado de favorito
+    if (widget.currentUser != null) {
+      _checkInitialFavoriteStatus(widget.currentUser!.uid);
+    }
+  }
+
+  // Se actualiza si el usuario cambia (ej. hace login/logout)
+  @override
+  void didUpdateWidget(covariant FavoriteButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentUser?.uid != oldWidget.currentUser?.uid) {
+      if (widget.currentUser != null) {
+        _checkInitialFavoriteStatus(widget.currentUser!.uid);
+      } else {
+        setState(() {
+          _isFavorite = false;
+        });
+      }
+    }
+  }
+
+  // Verifica el estado inicial de favorito con la nueva ruta
+  void _checkInitialFavoriteStatus(String userId) async {
+    final docRef = _getFavoriteDocRef(userId);
+
+    try {
+      final docSnapshot = await docRef.get();
+      if (mounted) {
+        setState(() {
+          _isFavorite = docSnapshot.exists;
+        });
+      }
+    } catch (e) {
+      log(
+        'Error al verificar el estado de favorito: $e',
+        name: 'FavoriteCheck',
+      );
+    }
+  }
+
+  // Alterna el estado de favorito en Firestore (USANDO LA NUEVA ESTRUCTURA)
+  void _toggleFavorite() async {
+    if (widget.currentUser == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes iniciar sesión para agregar a favoritos.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final userId = widget.currentUser!.uid;
+    final docRef = _getFavoriteDocRef(userId);
+
+    try {
+      final newFavoriteStatus = !_isFavorite;
+
+      if (newFavoriteStatus) {
+        // ⭐ Guardamos los datos de la receta para listarlos fácilmente en Favoritos
+        await docRef.set({
+          'recipeId': widget.recipeId,
+          'title': widget.title,
+          'imageUrl': widget.imageUrl,
+          'description': widget.description,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Eliminamos el favorito
+        await docRef.delete();
+      }
+
+      if (mounted) {
+        // Solo reconstruye este pequeño widget
+        setState(() {
+          _isFavorite = newFavoriteStatus;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar favoritos: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggleFavorite,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _isFavorite ? Icons.star : Icons.star_border,
+            color: _isFavorite ? _primaryGreen : _unselectedDarkColor,
+            size: 24,
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            "Favoritos",
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: "roboto",
+              color: _unselectedDarkColor,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------
+// CLASE PRINCIPAL: RecipeDetailScreen
+// -----------------------------------------------------------------
 class RecipeDetailScreen extends StatefulWidget {
   final Receta receta;
 
@@ -22,13 +183,8 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
-  // Estado inicial de favorito.
-  bool _isFavorite = false;
-
-  // Controlador para el campo de texto del nuevo comentario
   final TextEditingController _commentController = TextEditingController();
-
-  User? _currentUser; // Se mantiene, ya que se usa en _showCommentModal
+  User? _currentUser;
 
   @override
   void initState() {
@@ -38,7 +194,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   // Función para obtener el usuario actual y escuchar cambios
   void _checkCurrentUser() {
-    // Escucha los cambios de autenticación.
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (mounted) {
         setState(() {
@@ -54,7 +209,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.dispose();
   }
 
-  // 🛠️ FUNCIÓN DE WIDGET AJUSTADA: Usa Chip para apariencia de botón
   Widget _buildInfoItem(
     IconData icon,
     String label,
@@ -67,7 +221,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       return const SizedBox.shrink();
     }
 
-    // ⭐ Retorna un Chip para darle una apariencia de botón
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: Chip(
@@ -91,31 +244,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // Widget para la sección de favoritos (interactivo)
-  Widget _buildFavoritesSection() {
+  Widget _buildCommentButton() {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isFavorite = !_isFavorite;
-        });
-        final message = _isFavorite
-            ? 'Receta agregada a Favoritos'
-            : 'Receta eliminada de Favoritos';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
-      },
-      child: Row(
+      onTap: _showCommentModal,
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            _isFavorite ? Icons.star : Icons.star_border,
-            color: _isFavorite ? _primaryGreen : _unselectedDarkColor,
-            size: 24,
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            "Favoritos",
+          Icon(Icons.comment_outlined, color: _unselectedDarkColor, size: 20),
+          SizedBox(width: 8),
+          Text(
+            "Comentar",
             style: TextStyle(
               fontSize: 16,
               fontFamily: "roboto",
@@ -128,7 +266,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // 🆕 FUNCIÓN para mostrar el modal de comentarios (Ajustado)
   void _showCommentModal() {
     showModalBottomSheet(
       context: context,
@@ -175,10 +312,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                 const SizedBox(height: 20),
 
-                // ---------------------------------------------
                 // 🌟 FORMULARIO FIJO EN LA PARTE INFERIOR
-                // ---------------------------------------------
-                // Aquí se utiliza _currentUser para decidir qué mostrar
                 if (_currentUser != null)
                   _buildCommentForm()
                 else
@@ -202,30 +336,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // Widget para el botón de comentarios (sin cambios)
-  Widget _buildCommentButton() {
-    return GestureDetector(
-      onTap: _showCommentModal,
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.comment, color: _unselectedDarkColor, size: 20),
-          SizedBox(width: 8),
-          Text(
-            "Comentar",
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: "roboto",
-              color: _unselectedDarkColor,
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // WIDGET AUXILIAR PARA EL FORMULARIO DE COMENTARIOS (sin cambios)
   Widget _buildCommentForm() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,9 +379,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // WIDGET AUXILIAR para la Lista de Comentarios (sin cambios)
   Widget _buildCommentsList() {
-    // ... (código para construir la lista de comentarios)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -348,7 +456,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // LÓGICA PARA ENVIAR EL COMENTARIO (sin cambios)
+  // LÓGICA PARA ENVIAR EL COMENTARIO
   void _submitComment() async {
     if (_currentUser == null) {
       if (!mounted) return;
@@ -399,7 +507,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
-  // Función auxiliar para capitalizar la primera letra de cada palabra (sin cambios)
+  // Función auxiliar para capitalizar la primera letra de cada palabra
   String _capitalizeWords(String text) {
     if (text.isEmpty) return text;
     return text
@@ -416,27 +524,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ---------------- APP BAR (AJUSTADO) ----------------
+      // ---------------- APP BAR ----------------
       appBar: AppBar(
-        // 1. Color del AppBar: Blanco
         backgroundColor: Colors.white,
-        // 2. Título adaptable al tamaño
         title: FittedBox(
           child: Text(
             widget.receta.title,
             style: const TextStyle(
               fontFamily: "roboto",
               fontWeight: FontWeight.w600,
-              // Color del texto ajustado para ser visible en blanco
               color: _unselectedDarkColor,
             ),
           ),
         ),
-        // Iconos de la AppBar: ajustados para ser visibles en blanco
         iconTheme: const IconThemeData(color: _unselectedDarkColor, size: 30),
       ),
 
-      // ---------------- CUERPO ----------------
+      // ---------------- CUERPO (FutureBuilder) ----------------
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
             .collection('recetas')
@@ -516,38 +620,32 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // TÍTULO DEBAJO DE LA IMAGEN (AJUSTADO: Fondo Blanco, Texto oscuro, alineado a la izquierda)
+                    // TÍTULO DEBAJO DE LA IMAGEN
                     Container(
-                      // ⭐ CAMBIO CLAVE: Fondo blanco
                       color: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         vertical: 0,
                         horizontal: 20.0,
-                      ), // Padding horizontal
-                      width: double
-                          .infinity, // Asegura que ocupe todo el ancho disponible
+                      ),
+                      width: double.infinity,
                       child: Text(
                         widget.receta.title,
-                        // ⭐ AJUSTE: Eliminado 'textAlign: TextAlign.center'
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           fontFamily: "roboto",
-                          // ⭐ CAMBIO CLAVE: Color del texto a oscuro para contraste
                           color: _unselectedDarkColor,
                         ),
                       ),
                     ),
-                    // Usamos Padding para el resto del contenido y alinearlo con el contenedor
+                    // Usamos Padding para el resto del contenido
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(
-                            height: 10,
-                          ), // Separación después del título
-                          // CATEGORÍA (sin cambios)
+                          const SizedBox(height: 10),
+                          // CATEGORÍA
                           Text(
                             "Categoría: ${_capitalizeWords(widget.receta.category)}",
                             style: const TextStyle(
@@ -561,7 +659,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           const SizedBox(height: 16),
 
                           // --------------------------------------------------
-                          // TIEMPO Y TEMPERATURA (Ahora como Chips)
+                          // TIEMPO Y TEMPERATURA (Chips)
                           // --------------------------------------------------
                           if (shouldShowInfoSection) ...[
                             const SizedBox(height: 10),
@@ -587,6 +685,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                           // --------------------------------------------------
                           // DESCRIPCIÓN - TÍTULO
+                          // --------------------------------------------------
                           const Padding(
                             padding: EdgeInsets.only(top: 20.0),
                             child: Text(
@@ -622,7 +721,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // 🌟 USO DE 'ingredients'
+                          // USO DE 'ingredients'
                           ...ingredients.map(
                             (item) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -669,7 +768,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           const SizedBox(height: 15),
 
                           // PASOS DE PREPARACIÓN
-                          // 🌟 USO de 'steps'
+                          // USO de 'steps'
                           ...steps.asMap().entries.map((entry) {
                             int index = entry.key;
                             String step = entry.value;
@@ -713,9 +812,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                           // Texto de cierre
                           Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 10.0,
-                            ), // Padding opcional para espacio adicional
+                            padding: const EdgeInsets.only(bottom: 10.0),
                             child: Text(
                               closingText,
                               style: const TextStyle(
@@ -738,7 +835,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              _buildFavoritesSection(),
+                              // ⭐ AQUÍ SE PASAN LOS DATOS COMPLETOS DE LA RECETA AL BOTÓN DE FAVORITOS
+                              FavoriteButton(
+                                recipeId: widget.receta.id,
+                                currentUser: _currentUser,
+                                // 🌟 Nuevos parámetros para guardar en la colección del usuario
+                                title: widget.receta.title,
+                                imageUrl: widget.receta.imageUrl,
+                                description: widget.receta.description,
+                              ),
                               const SizedBox(width: 30),
                               _buildCommentButton(),
                             ],
