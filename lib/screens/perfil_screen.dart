@@ -194,9 +194,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(
-                  bottom: 8.0,
-                  left: 8.0,
-                  right: 8.0,
+                  bottom: 10.0,
+                  left: 10.0,
+                  right: 10.0,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
