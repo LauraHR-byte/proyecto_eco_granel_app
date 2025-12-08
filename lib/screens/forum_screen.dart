@@ -144,13 +144,11 @@ class _CommentsModalState extends State<CommentsModal> {
 
         _commentController.clear();
 
-        // 🟢 CORRECCIÓN: Verificar 'mounted' antes de usar context después de 'await'
         if (mounted) {
           FocusScope.of(context).unfocus();
         }
       } catch (e) {
         // Manejar errores
-        // 🟢 CORRECCIÓN: Verificar 'mounted' antes de usar context después de 'await'
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al publicar comentario: $e')),
@@ -175,7 +173,7 @@ class _CommentsModalState extends State<CommentsModal> {
 
   @override
   Widget build(BuildContext context) {
-    // 💡 AJUSTE CLAVE: Eliminamos el 'Dialog' y definimos el contenido para el BottomSheet.
+    // AJUSTE CLAVE: Eliminamos el 'Dialog' y definimos el contenido para el BottomSheet.
     // Usamos Column y SingleChildScrollView dentro del body del BottomSheet, pero aquí
     // ya estamos dentro del widget retornado por showModalBottomSheet.
     return Container(
@@ -257,10 +255,13 @@ class _CommentsModalState extends State<CommentsModal> {
                       .toList();
 
                   if (comments.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Sé el primero en comentar.',
-                        style: TextStyle(color: Colors.grey),
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20.0),
+                      child: Center(
+                        child: Text(
+                          'Sé el primero en comentar.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
                     );
                   }
@@ -312,7 +313,11 @@ class _CommentsModalState extends State<CommentsModal> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.send, color: _primaryGreen),
+                    icon: const Icon(
+                      Icons.send,
+                      color: _primaryGreen,
+                      size: 22,
+                    ),
                     onPressed: currentUser != null ? _addComment : null,
                   ),
                 ],
@@ -383,7 +388,7 @@ class ReactionBar extends StatelessWidget {
       // Eliminar guardado
       await savedRef.doc(docId).delete();
 
-      // 🟢 CORRECCIÓN: Usar context.mounted
+      // Usar context.mounted
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -400,7 +405,7 @@ class ReactionBar extends StatelessWidget {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // 🟢 CORRECCIÓN: Usar context.mounted
+      // Usar context.mounted
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -412,7 +417,6 @@ class ReactionBar extends StatelessWidget {
     }
   }
 
-  // 💡 AJUSTE CLAVE: Cambiamos showDialog por showModalBottomSheet
   void _showCommentsModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -508,6 +512,7 @@ class ReactionBar extends StatelessWidget {
                         style: TextStyle(
                           color: _reactionButtonColor,
                           fontFamily: "roboto",
+                          fontWeight: FontWeight.normal,
                           fontSize: 14,
                         ),
                       ),

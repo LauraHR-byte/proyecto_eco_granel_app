@@ -9,17 +9,15 @@ const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _lightGrey = Color(0xFFE0E0E0);
 
-// NOTA: La clase Receta debe estar definida en 'recetas_screen.dart' o importada.
-
 // -----------------------------------------------------------------
-// 🛠️ WIDGET CLAVE: FavoriteButton (MODIFICADO para nueva estructura)
+// FavoriteButton (MODIFICADO para nueva estructura)
 // Se almacenan los datos de la receta en la colección de favoritos del usuario.
 // Estructura de guardado: userFavorites/{userId}/favorites/{recipeId}
 // -----------------------------------------------------------------
 class FavoriteButton extends StatefulWidget {
   final String recipeId;
   final User? currentUser;
-  // 🌟 CAMPOS AÑADIDOS para almacenar en la colección del usuario
+  // CAMPOS AÑADIDOS para almacenar en la colección del usuario
   final String title;
   final String imageUrl;
   final String description;
@@ -41,7 +39,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   // Estado local que solo reconstruye este widget
   bool _isFavorite = false;
 
-  // 🛠️ FUNCIÓN AUXILIAR: Obtiene la referencia al documento favorito
+  // Obtiene la referencia al documento favorito
   DocumentReference<Map<String, dynamic>> _getFavoriteDocRef(String userId) {
     // NUEVA RUTA: userFavorites/{userId}/favorites/{recipeId}
     return FirebaseFirestore.instance
@@ -94,7 +92,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
     }
   }
 
-  // Alterna el estado de favorito en Firestore (USANDO LA NUEVA ESTRUCTURA)
+  // Alterna el estado de favorito en Firestore
   void _toggleFavorite() async {
     if (widget.currentUser == null) {
       if (!mounted) return;
@@ -114,7 +112,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
       final newFavoriteStatus = !_isFavorite;
 
       if (newFavoriteStatus) {
-        // ⭐ Guardamos los datos de la receta para listarlos fácilmente en Favoritos
+        // Guardamos los datos de la receta para listarlos fácilmente en Favoritos
         await docRef.set({
           'recipeId': widget.recipeId,
           'title': widget.title,
@@ -255,7 +253,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           Text(
             "Comentar",
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontFamily: "roboto",
               color: _unselectedDarkColor,
               fontWeight: FontWeight.normal,
@@ -271,48 +269,68 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+        return Container(
+          // Usamos MediaQuery para que ocupe el 80% de la altura y evitar el teclado
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: const BoxDecoration(
+            color: Colors.white, // Fondo blanco para el modal
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
           ),
-          child: Container(
-            height: MediaQuery.of(context).size.height * 0.85,
-            padding: const EdgeInsets.all(20),
+          child: Padding(
+            padding: const EdgeInsets.all(18.0).copyWith(
+              // Espacio extra para el teclado en la parte inferior si es necesario
+              bottom: 18.0 + MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Encabezado del Modal
+                // Encabezado (Manija + Título)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                  ],
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Comentarios de la Receta",
+                      'Comentarios de la Receta',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                         fontFamily: "roboto",
-                        color: _unselectedDarkColor,
+                        fontWeight: FontWeight.bold,
+                        color: _primaryGreen,
                       ),
                     ),
+                    // Botón de cierre que ya no es un 'Dialog', pero sigue cerrando el Modal.
                     IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () =>
-                          Navigator.pop(context), // Cierra el modal
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
                 const Divider(),
-                const SizedBox(height: 10),
 
                 // Lista de Comentarios
                 Expanded(
                   child: SingleChildScrollView(child: _buildCommentsList()),
                 ),
+                const Divider(),
+                const SizedBox(height: 10),
 
-                const SizedBox(height: 20),
-
-                // 🌟 FORMULARIO FIJO EN LA PARTE INFERIOR
+                // FORMULARIO FIJO EN LA PARTE INFERIOR
                 if (_currentUser != null)
                   _buildCommentForm()
                 else
@@ -344,11 +362,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           child: TextField(
             controller: _commentController,
             decoration: InputDecoration(
-              hintText: "Escribe tu comentario...",
+              hintText: "Añadir un comentario...",
               fillColor: _lightGrey.withAlpha(128),
               filled: true,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.0),
+                borderRadius: BorderRadius.circular(20.0),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -360,20 +378,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          height: 50,
-          child: ElevatedButton(
-            onPressed: _submitComment,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primaryGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-            ),
-            child: const Icon(Icons.send),
-          ),
+        IconButton(
+          icon: const Icon(Icons.send, color: _primaryGreen, size: 22),
+          onPressed: _submitComment,
         ),
       ],
     );
@@ -402,7 +409,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.0),
                 child: Center(
-                  child: Text("Sé el primero en comentar esta receta."),
+                  child: Text(
+                    "Sé el primero en comentar esta receta.",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               );
             }
@@ -835,11 +845,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              // ⭐ AQUÍ SE PASAN LOS DATOS COMPLETOS DE LA RECETA AL BOTÓN DE FAVORITOS
+                              //AQUÍ SE PASAN LOS DATOS COMPLETOS DE LA RECETA AL BOTÓN DE FAVORITOS
                               FavoriteButton(
                                 recipeId: widget.receta.id,
                                 currentUser: _currentUser,
-                                // 🌟 Nuevos parámetros para guardar en la colección del usuario
+                                //Nuevos parámetros para guardar en la colección del usuario
                                 title: widget.receta.title,
                                 imageUrl: widget.receta.imageUrl,
                                 description: widget.receta.description,
