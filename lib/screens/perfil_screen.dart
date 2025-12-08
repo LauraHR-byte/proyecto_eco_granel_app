@@ -13,9 +13,10 @@ import 'condiciones_screen.dart';
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _orangeColor = Color(0xFFC76939);
+const Color _commentTextColor = Color(0xFF424242);
 
 // ----------------------------------------------------------------------
-// COMPONENTES REUTILIZABLES
+// COMPONENTES REUTILIZABLES (Sin cambios)
 // ----------------------------------------------------------------------
 
 class _ProfileOptionRow extends StatelessWidget {
@@ -129,7 +130,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
-  // MODIFICACIÓN CLAVE 1: Función de navegación a LikesScreen
+  // Función de navegación a LikesScreen
   void _navigateToLikes() {
     Navigator.push(
       context,
@@ -158,128 +159,127 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
-  // FUNCIÓN PARA MOSTRAR EL DIÁLOGO DE CONFIRMACIÓN CON ESTILO DE PROTOTIPO
+  // ----------------------------------------------------------------------
+  // FUNCIÓN AJUSTADA: DIÁLOGO DE CONFIRMACIÓN CON ESTILO PERSONALIZADO
+  // ----------------------------------------------------------------------
   void _confirmLogout() {
-    // Usamos showGeneralDialog para tener control total sobre el fondo oscuro
-    showGeneralDialog(
+    showDialog(
       context: context,
-      barrierColor: Colors.black.withAlpha(
-        120,
-      ), // Color de fondo oscuro (50% opacidad)
-      barrierDismissible: false, // El usuario debe seleccionar una opción
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (context, anim1, anim2) {
-        return Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 330),
-            padding: const EdgeInsets.all(30.0),
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(12),
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          // Estilo de tarjeta moderna (esquinas redondeadas)
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+
+          // Título Centrado
+          title: const Text(
+            "¿Salir de tu cuenta?",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.normal,
+              fontFamily: "roboto",
+              color: _unselectedDarkColor,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                const Text(
-                  "¿Salir de tu cuenta?",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "roboto",
-                    color: Colors.white,
-                    decoration: TextDecoration.none,
-                  ),
+          ),
+
+          // Contenido vacío (si no hay texto extra)
+          content: null,
+
+          // Acciones personalizadas (Botones)
+          actions: <Widget>[
+            // Usamos un Center para envolver los botones y que se alineen al centro del diálogo
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  bottom: 8.0,
+                  left: 8.0,
+                  right: 8.0,
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
                     // ------------------------------------------------
-                    // Botón Salir (Fondo Blanco, Overlay Naranja)
+                    // Botón CANCELAR (Fondo Blanco, Borde Gris, Texto Oscuro)
                     // ------------------------------------------------
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // Cierra el diálogo y luego ejecuta el logout
-                          Navigator.of(context).pop();
-                          _logout();
+                          Navigator.of(dialogContext).pop();
                         },
                         style: ElevatedButton.styleFrom(
-                          // Fondo por defecto: BLANCO
-                          backgroundColor: Colors.white,
-                          // Color del texto por defecto: GRIS
                           foregroundColor: Colors.grey,
-                          // Color al presionar: NARANJA (con opacidad para el efecto 'tap')
-                          overlayColor: _orangeColor.withAlpha(255),
+                          overlayColor: Colors.grey.withAlpha(
+                            25,
+                          ), // Overlay sutil
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            // Borde sutil del botón
                             side: const BorderSide(
                               color: Colors.grey,
                               width: 1,
                             ),
                           ),
-                          elevation:
-                              0, // Quitamos la elevación para que parezca más plano
+                          elevation: 0,
                         ),
                         child: const Text(
-                          "Salir",
+                          "CANCELAR",
                           style: TextStyle(
                             fontFamily: "roboto",
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: _unselectedDarkColor, // Texto oscuro
+                            fontSize: 14,
+                            color: _commentTextColor, // Texto oscuro
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     // ------------------------------------------------
-                    // Botón Cancelar (Fondo Blanco, Overlay Naranja)
+                    // Botón SALIR (Fondo Blanco, Borde Naranja, Texto Naranja)
                     // ------------------------------------------------
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // Solo cierra el diálogo
-                          Navigator.of(context).pop();
+                          Navigator.of(dialogContext).pop();
+                          _logout();
                         },
                         style: ElevatedButton.styleFrom(
-                          // Fondo por defecto: BLANCO
-                          backgroundColor: Colors.white,
-                          // Color del texto por defecto: GRIS
-                          foregroundColor: Colors.grey,
-                          // Color al presionar: NARANJA (con opacidad para el efecto 'tap')
-                          overlayColor: _orangeColor.withAlpha(255),
+                          foregroundColor: _orangeColor,
+                          overlayColor: _orangeColor.withAlpha(
+                            25,
+                          ), // Overlay sutil
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            // Borde sutil del botón
                             side: const BorderSide(
-                              color: Colors.grey,
+                              color: _orangeColor, // Borde Naranja
                               width: 1,
                             ),
                           ),
-                          elevation:
-                              0, // Quitamos la elevación para que parezca más plano
+                          elevation: 0,
                         ),
                         child: const Text(
-                          "Cancelar",
+                          "SALIR",
                           style: TextStyle(
                             fontFamily: "roboto",
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color:
-                                _unselectedDarkColor, // Mantenemos el texto oscuro
+                            fontSize: 14,
+                            color: _orangeColor, // Texto Naranja
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
+          // Eliminamos el padding automático del content si es nulo
+          contentPadding: EdgeInsets.zero,
+          // Eliminamos el padding automático de las acciones para controlarlo con el Padding del Row
+          actionsPadding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
         );
       },
     );
@@ -322,7 +322,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
               icon: Icons.bookmark_border,
               onTap: _navigateToGuardado,
             ),
-            // MODIFICACIÓN CLAVE 2: Llama a la función de navegación a LikesScreen
             _ProfileOptionRow(
               title: "Likes",
               icon: Icons.favorite_border,
@@ -363,7 +362,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 20.0,
+                horizontal: 24.0,
                 vertical: 24.0,
               ),
               child: SizedBox(
@@ -374,11 +373,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _orangeColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 5,
+                    elevation: 2,
                   ),
                   child: const Text(
                     "Cerrar Sesión",
@@ -400,7 +399,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 }
 
 // ----------------------------------------------------------------------
-// PROFILE HEADER (Contiene la lógica de carga de datos de Firestore)
+// PROFILE HEADER (Sin cambios)
 // ----------------------------------------------------------------------
 
 class _ProfileHeader extends StatefulWidget {

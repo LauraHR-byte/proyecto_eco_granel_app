@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:eco_granel_app/screens/recetas_screen.dart';
+import 'package:eco_granel_app/screens/recetas_screen.dart'; // Asegúrate de que esta importación sea correcta
 import 'dart:developer';
 
 // Tus colores globales
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _lightGrey = Color(0xFFE0E0E0);
+const Color _orangeColor = Color(0xFFC76939);
+const Color _commentTextColor = Color(0xFF424242);
 
 // -----------------------------------------------------------------
-// FavoriteButton (MODIFICADO para nueva estructura)
-// Se almacenan los datos de la receta en la colección de favoritos del usuario.
-// Estructura de guardado: userFavorites/{userId}/favorites/{recipeId}
+// FavoriteButton (Clase auxiliar)
 // -----------------------------------------------------------------
 class FavoriteButton extends StatefulWidget {
   final String recipeId;
   final User? currentUser;
-  // CAMPOS AÑADIDOS para almacenar en la colección del usuario
   final String title;
   final String imageUrl;
   final String description;
@@ -36,29 +35,24 @@ class FavoriteButton extends StatefulWidget {
 }
 
 class _FavoriteButtonState extends State<FavoriteButton> {
-  // Estado local que solo reconstruye este widget
   bool _isFavorite = false;
 
-  // Obtiene la referencia al documento favorito
   DocumentReference<Map<String, dynamic>> _getFavoriteDocRef(String userId) {
-    // NUEVA RUTA: userFavorites/{userId}/favorites/{recipeId}
     return FirebaseFirestore.instance
-        .collection('userFavorites') // Colección Raíz de Favoritos por Usuario
+        .collection('userFavorites')
         .doc(userId)
-        .collection('favorites') // Subcolección de Recetas Favoritas
-        .doc(widget.recipeId); // Documento con el ID de la Receta
+        .collection('favorites')
+        .doc(widget.recipeId);
   }
 
   @override
   void initState() {
     super.initState();
-    // Iniciar la verificación del estado de favorito
     if (widget.currentUser != null) {
       _checkInitialFavoriteStatus(widget.currentUser!.uid);
     }
   }
 
-  // Se actualiza si el usuario cambia (ej. hace login/logout)
   @override
   void didUpdateWidget(covariant FavoriteButton oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -73,10 +67,8 @@ class _FavoriteButtonState extends State<FavoriteButton> {
     }
   }
 
-  // Verifica el estado inicial de favorito con la nueva ruta
   void _checkInitialFavoriteStatus(String userId) async {
     final docRef = _getFavoriteDocRef(userId);
-
     try {
       final docSnapshot = await docRef.get();
       if (mounted) {
@@ -92,14 +84,13 @@ class _FavoriteButtonState extends State<FavoriteButton> {
     }
   }
 
-  // Alterna el estado de favorito en Firestore
   void _toggleFavorite() async {
     if (widget.currentUser == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Debes iniciar sesión para agregar a favoritos.'),
-          backgroundColor: Colors.red,
+          backgroundColor: _orangeColor,
         ),
       );
       return;
@@ -112,7 +103,6 @@ class _FavoriteButtonState extends State<FavoriteButton> {
       final newFavoriteStatus = !_isFavorite;
 
       if (newFavoriteStatus) {
-        // Guardamos los datos de la receta para listarlos fácilmente en Favoritos
         await docRef.set({
           'recipeId': widget.recipeId,
           'title': widget.title,
@@ -121,12 +111,10 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           'timestamp': FieldValue.serverTimestamp(),
         });
       } else {
-        // Eliminamos el favorito
         await docRef.delete();
       }
 
       if (mounted) {
-        // Solo reconstruye este pequeño widget
         setState(() {
           _isFavorite = newFavoriteStatus;
         });
@@ -207,6 +195,97 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.dispose();
   }
 
+  // --------------------------------------------------
+  // AÑADIDO: LÓGICA PARA ELIMINAR EL COMENTARIO
+  // --------------------------------------------------
+  void _deleteComment(String commentId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('recetas')
+          .doc(widget.receta.id)
+          .collection('comments')
+          .doc(commentId)
+          .delete();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Comentario eliminado con éxito.'),
+          backgroundColor: _primaryGreen,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el comentario: $e'),
+          backgroundColor: _orangeColor,
+        ),
+      );
+    }
+  }
+
+  // --------------------------------------------------
+  // AÑADIDO: DIÁLOGO DE CONFIRMACIÓN (Centrado y Padding)
+  // --------------------------------------------------
+  void _showDeleteConfirmationDialog(
+    String commentId,
+    BuildContext itemContext,
+  ) {
+    showDialog(
+      context: itemContext,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          // Centrado con Padding
+          title: Padding(
+            padding: const EdgeInsets.only(top: 10.0, bottom: 0),
+            child: const Text(
+              '¿Confirmas que quieres eliminar este comentario?',
+              textAlign: TextAlign.center, // <-- Texto Centrado
+              style: TextStyle(
+                color: _unselectedDarkColor,
+                fontSize: 18,
+                fontFamily: "roboto",
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'CANCELAR',
+                style: TextStyle(
+                  color: _commentTextColor,
+                  fontSize: 14,
+                  fontFamily: "roboto",
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text(
+                'ELIMINAR',
+                style: TextStyle(
+                  color: _orangeColor,
+                  fontSize: 14,
+                  fontFamily: "roboto",
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _deleteComment(commentId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildInfoItem(
     IconData icon,
     String label,
@@ -222,7 +301,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: Chip(
-        backgroundColor: color.withAlpha(38), // Fondo suave
+        backgroundColor: color.withAlpha(38),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: color.withAlpha(128)),
@@ -234,7 +313,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             fontSize: 14,
             fontWeight: FontWeight.bold,
             fontFamily: "roboto",
-            color: color, // Color del texto igual al ícono
+            color: color,
           ),
         ),
         avatar: Icon(icon, color: color, size: 20),
@@ -270,24 +349,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       isScrollControlled: true,
       builder: (context) {
         return Container(
-          // Usamos MediaQuery para que ocupe el 80% de la altura y evitar el teclado
           height: MediaQuery.of(context).size.height * 0.8,
           decoration: const BoxDecoration(
-            color: Colors.white, // Fondo blanco para el modal
+            color: Colors.white,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(18.0).copyWith(
-              // Espacio extra para el teclado en la parte inferior si es necesario
-              bottom: 18.0 + MediaQuery.of(context).viewInsets.bottom,
-            ),
+            padding: const EdgeInsets.all(
+              18.0,
+            ).copyWith(bottom: 18.0 + MediaQuery.of(context).viewInsets.bottom),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Encabezado (Manija + Título)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -314,7 +390,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         color: _primaryGreen,
                       ),
                     ),
-                    // Botón de cierre que ya no es un 'Dialog', pero sigue cerrando el Modal.
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.grey),
                       onPressed: () => Navigator.of(context).pop(),
@@ -323,7 +398,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
                 const Divider(),
 
-                // Lista de Comentarios
+                // Lista de Comentarios (Usa la función modificada)
                 Expanded(
                   child: SingleChildScrollView(child: _buildCommentsList()),
                 ),
@@ -340,7 +415,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       'Debes iniciar sesión para poder dejar un comentario.',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.red.shade700,
+                        color: _orangeColor,
                         fontStyle: FontStyle.italic,
                         fontFamily: 'roboto',
                       ),
@@ -386,6 +461,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
+  // --------------------------------------------------
+  // MODIFICADO: WIDGET DE LISTA DE COMENTARIOS
+  // --------------------------------------------------
   Widget _buildCommentsList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,10 +500,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
-                final commentData =
-                    snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                final commentDoc =
+                    snapshot.data!.docs[index]; // Referencia al documento
+                final commentData = commentDoc.data() as Map<String, dynamic>;
+                final commentId = commentDoc.id; // ID del comentario
                 final commentText = commentData['text'] ?? 'Comentario vacío';
                 final userName = commentData['userName'] ?? 'Usuario Anónimo';
+                final commentUserId =
+                    commentData['userId'] as String?; // ID del autor
+
+                // Determinar si puede borrar
+                final bool canDelete =
+                    _currentUser != null && commentUserId == _currentUser!.uid;
+
                 final timestamp = commentData['timestamp'] as Timestamp?;
                 final date = timestamp != null
                     ? ' - ${DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch).toLocal().toString().split(' ')[0]}'
@@ -434,14 +521,38 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '$userName$date',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryGreen,
-                        fontFamily: 'roboto',
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Nombre de usuario y fecha
+                        Flexible(
+                          child: Text(
+                            '$userName$date',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _primaryGreen,
+                              fontFamily: 'roboto',
+                            ),
+                          ),
+                        ),
+
+                        // Botón de ELIMINAR (Solo si canDelete es true)
+                        if (canDelete)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: _orangeColor,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _showDeleteConfirmationDialog(commentId, context);
+                            },
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0, bottom: 10.0),
@@ -473,7 +584,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error: Debes iniciar sesión para comentar.'),
-          backgroundColor: Colors.red,
+          backgroundColor: _orangeColor,
         ),
       );
       return;
@@ -626,7 +737,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   ),
                 ),
 
-                // 📌 CONTENIDO DETALLADO
+                //CONTENIDO DETALLADO
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

@@ -8,6 +8,7 @@ const Color _unselectedDarkColor = Color(0xFF333333);
 const Color _reactionButtonColor = Color(0xFF6E6E6E);
 const Color _commentTextColor = Color(0xFF424242);
 const Color _likeColor = Color(0xFF4CAF50);
+const Color _orangeColor = Color(0xFFC76939);
 const int _maxLinesExcerpt = 4;
 
 // ------------------------------------
@@ -36,9 +37,11 @@ class CommentData {
   final String authorName;
   final String content;
   final String time;
+  final String userId;
 
   CommentData.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc)
     : id = doc.id,
+      userId = doc['userId'] as String? ?? '',
       authorName = doc['authorName'] as String? ?? 'Anónimo',
       content = doc['content'] as String? ?? '',
       time = (doc['timestamp'] as Timestamp?) != null
@@ -48,14 +51,26 @@ class CommentData {
 
 // ------------------------------------
 // --- Comentario Individual (Para el Modal) ---
+// AJUSTADO: Se añadió la lógica de confirmación al presionar eliminar.
 // ------------------------------------
 class _CommentItem extends StatelessWidget {
   final CommentData comment;
+  final String? currentUserId;
+  // La función onDelete ahora abre el diálogo de confirmación
+  final Function(String commentId, BuildContext context) onDelete;
 
-  const _CommentItem({required this.comment});
+  const _CommentItem({
+    required this.comment,
+    required this.currentUserId,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Variable para determinar si el usuario actual es el autor del comentario
+    final bool canDelete =
+        currentUserId != null && currentUserId == comment.userId;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -104,6 +119,17 @@ class _CommentItem extends StatelessWidget {
               ],
             ),
           ),
+          // AÑADIDO: Botón de eliminar, visible solo para el autor
+          if (canDelete)
+            IconButton(
+              icon: const Icon(
+                Icons.delete_forever,
+                color: _orangeColor,
+                size: 20,
+              ),
+              // Llamamos a onDelete, pasando el ID del comentario y el contexto
+              onPressed: () => onDelete(comment.id, context),
+            ),
         ],
       ),
     );
@@ -112,6 +138,7 @@ class _CommentItem extends StatelessWidget {
 
 // ------------------------------------
 // --- Modal de Comentarios (AJUSTADO: Uso de ModalBottomSheet) ---
+// AJUSTADO: Se añadió el método _showDeleteConfirmationDialog
 // ------------------------------------
 class CommentsModal extends StatefulWidget {
   final String postId;
@@ -126,7 +153,7 @@ class _CommentsModalState extends State<CommentsModal> {
   final TextEditingController _commentController = TextEditingController();
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
-  // Lógica para agregar comentario a Firestore (CORREGIDA LA ADVERTENCIA ASÍNCRONA)
+  // Lógica para agregar comentario a Firestore
   void _addComment() async {
     final String content = _commentController.text.trim();
     if (content.isNotEmpty && currentUser != null) {
@@ -156,13 +183,105 @@ class _CommentsModalState extends State<CommentsModal> {
         }
       }
     } else if (currentUser == null) {
-      // Por seguridad, aunque no haya await antes, es una buena práctica en métodos de estado.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Debes iniciar sesión para comentar.')),
         );
       }
     }
+  }
+
+  // Lógica para eliminar comentario de Firestore
+  void _deleteComment(String commentId) async {
+    if (currentUser == null) return;
+
+    try {
+      // Intentamos eliminar el documento del comentario
+      await FirebaseFirestore.instance
+          .collection('comments')
+          .doc(commentId)
+          .delete();
+
+      if (mounted) {
+        // Muestra un mensaje de éxito, pero no cerramos el modal de comentarios
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Comentario eliminado con éxito.'),
+            duration: Duration(milliseconds: 1500),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar comentario: $e'),
+            backgroundColor: _orangeColor,
+          ),
+        );
+      }
+    }
+  }
+
+  // AÑADIDO: Diálogo de confirmación
+  void _showDeleteConfirmationDialog(
+    String commentId,
+    BuildContext itemContext,
+  ) {
+    showDialog(
+      context: itemContext, // Usamos el contexto del elemento para el diálogo
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Padding(
+            padding: const EdgeInsets.only(
+              top: 10.0,
+              bottom: 0,
+            ), // Ajusta el padding deseado (e.g., más arriba/abajo)
+            child: const Text(
+              '¿Confirmas que quieres eliminar este comentario?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _unselectedDarkColor,
+                fontSize: 18,
+                fontFamily: "roboto",
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'CANCELAR',
+                style: TextStyle(
+                  color: _commentTextColor,
+                  fontSize: 14,
+                  fontFamily: "roboto",
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Cierra el diálogo
+              },
+            ),
+            TextButton(
+              child: const Text(
+                'ELIMINAR',
+                style: TextStyle(
+                  color: _orangeColor,
+                  fontSize: 14,
+                  fontFamily: "roboto",
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Cierra el diálogo
+                _deleteComment(commentId); // Ejecuta la eliminación
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -173,11 +292,7 @@ class _CommentsModalState extends State<CommentsModal> {
 
   @override
   Widget build(BuildContext context) {
-    // AJUSTE CLAVE: Eliminamos el 'Dialog' y definimos el contenido para el BottomSheet.
-    // Usamos Column y SingleChildScrollView dentro del body del BottomSheet, pero aquí
-    // ya estamos dentro del widget retornado por showModalBottomSheet.
     return Container(
-      // Usamos MediaQuery para que ocupe el 80% de la altura y evitar el teclado
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: const BoxDecoration(
         color: Colors.white, // Fondo blanco para el modal
@@ -221,7 +336,7 @@ class _CommentsModalState extends State<CommentsModal> {
                     color: _primaryGreen,
                   ),
                 ),
-                // Botón de cierre que ya no es un 'Dialog', pero sigue cerrando el Modal.
+                // Botón de cierre
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.grey),
                   onPressed: () => Navigator.of(context).pop(),
@@ -268,13 +383,17 @@ class _CommentsModalState extends State<CommentsModal> {
 
                   return ListView.separated(
                     itemCount: comments.length,
-                    // Se usa Padding.zero para eliminar el padding vertical extra
                     separatorBuilder: (context, index) => const Divider(
                       height: 1,
                       indent: 48,
                     ), // Indentado para alinear con el texto del comentario
                     itemBuilder: (context, index) {
-                      return _CommentItem(comment: comments[index]);
+                      return _CommentItem(
+                        comment: comments[index],
+                        currentUserId: currentUser?.uid,
+                        // LLAMAMOS a la nueva función de confirmación
+                        onDelete: _showDeleteConfirmationDialog,
+                      );
                     },
                   );
                 },
@@ -331,7 +450,7 @@ class _CommentsModalState extends State<CommentsModal> {
 }
 
 // ------------------------------------
-// --- Barra de Reacciones (AJUSTADO: Solo la función _showCommentsModal) ---
+// --- Barra de Reacciones (Mantenido igual) ---
 // ------------------------------------
 class ReactionBar extends StatelessWidget {
   final String postId;
@@ -601,7 +720,7 @@ class MarkdownTextWidget extends StatelessWidget {
       if (line.trim().startsWith('* ')) {
         spans.add(
           const TextSpan(
-            text: '  • ',
+            text: '  • ',
             style: TextStyle(fontWeight: FontWeight.bold, color: _primaryGreen),
           ),
         );
@@ -627,7 +746,7 @@ class MarkdownTextWidget extends StatelessWidget {
 }
 
 // ------------------------------------
-// --- PostCard (Adaptado para Firebase) ---
+// --- PostCard (Mantenido Igual) ---
 // ------------------------------------
 class PostCard extends StatefulWidget {
   final BlogPost post;
@@ -772,7 +891,7 @@ class _PostCardState extends State<PostCard> {
 }
 
 // ------------------------------------
-// --- Pantalla Principal del Blog (Con Firestore) ---
+// --- Pantalla Principal del Blog (Mantenido Igual) ---
 // ------------------------------------
 class ForoScreen extends StatelessWidget {
   const ForoScreen({super.key});
