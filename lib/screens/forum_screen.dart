@@ -44,9 +44,15 @@ class CommentData {
       userId = doc['userId'] as String? ?? '',
       authorName = doc['authorName'] as String? ?? 'Anónimo',
       content = doc['content'] as String? ?? '',
-      time = (doc['timestamp'] as Timestamp?) != null
-          ? 'Recién publicado'
-          : 'Ahora';
+      time = (() {
+        final ts = doc['timestamp'] as Timestamp?;
+        if (ts == null) return 'Fecha desconocida';
+
+        final dateTime = ts.toDate();
+        return '${dateTime.day.toString().padLeft(2, '0')}/'
+            '${dateTime.month.toString().padLeft(2, '0')}/'
+            '${dateTime.year}';
+      })();
 }
 
 // ------------------------------------
@@ -76,11 +82,39 @@ class _CommentItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: Colors.grey,
-            child: Icon(Icons.person, color: Colors.white, size: 20),
+          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(comment.userId)
+                .get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.grey,
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                );
+              }
+
+              final data = snapshot.data?.data();
+              final photoURL = data?['photoURL'] as String?;
+
+              if (photoURL != null && photoURL.isNotEmpty) {
+                return CircleAvatar(
+                  radius: 18,
+                  backgroundImage: NetworkImage(photoURL),
+                  backgroundColor: Colors.grey[200],
+                );
+              }
+
+              return const CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.grey,
+                child: Icon(Icons.person, color: Colors.white, size: 20),
+              );
+            },
           ),
+
           const SizedBox(width: 10),
           Expanded(
             child: Column(

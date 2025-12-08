@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eco_granel_app/screens/avatar_screen.dart';
 
 // --- Definiciones de Color (Copias de PerfilScreen para consistencia) ---
 
@@ -116,9 +117,9 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
 
       if (mounted) {
         // Muestra mensaje de éxito y regresa a la pantalla anterior
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil actualizado con éxito!')),
-        );
+        //ScaffoldMessenger.of(context).showSnackBar(
+        //const SnackBar(content: Text('Perfil actualizado con éxito!')),
+        //);
         Navigator.of(context).pop(true); // Retorna 'true' para indicar éxito
       }
     } catch (e) {
@@ -137,14 +138,21 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   }
 
   // 5. Función de ejemplo para subir foto (aquí iría la lógica de ImagePicker y Firebase Storage)
-  void _changeProfilePicture() {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Abriendo selector de imágenes...')),
-      );
+  void _changeProfilePicture() async {
+    // Navega a la nueva pantalla y espera la URL seleccionada
+    final newPhotoUrl = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) =>
+            SeleccionarAvatarScreen(currentAvatarUrl: _currentPhotoUrl),
+      ),
+    );
+
+    // Si se selecciona y guarda un nuevo avatar, actualiza el estado local
+    if (newPhotoUrl != null && newPhotoUrl != _currentPhotoUrl) {
+      setState(() {
+        _currentPhotoUrl = newPhotoUrl;
+      });
     }
-    // Lógica real: Usar ImagePicker y subir a Firebase Storage
-    // Después de subir, actualizar _currentPhotoUrl
   }
 
   @override

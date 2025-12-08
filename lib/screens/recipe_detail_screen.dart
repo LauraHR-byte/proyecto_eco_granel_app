@@ -208,12 +208,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           .delete();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comentario eliminado con éxito.'),
-          backgroundColor: _primaryGreen,
-        ),
-      );
+      //ScaffoldMessenger.of(context).showSnackBar(
+      //const SnackBar(
+      //content: Text('Comentario eliminado con éxito.'),
+      //backgroundColor: _primaryGreen,
+      //),
+      //);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -474,7 +474,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               .doc(widget.receta.id)
               .collection('comments')
               .orderBy('timestamp', descending: true)
-              .limit(10)
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -500,74 +499,121 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
-                final commentDoc =
-                    snapshot.data!.docs[index]; // Referencia al documento
-                final commentData = commentDoc.data() as Map<String, dynamic>;
-                final commentId = commentDoc.id; // ID del comentario
-                final commentText = commentData['text'] ?? 'Comentario vacío';
-                final userName = commentData['userName'] ?? 'Usuario Anónimo';
-                final commentUserId =
-                    commentData['userId'] as String?; // ID del autor
+                final commentDoc = snapshot.data!.docs[index];
+                final data = commentDoc.data() as Map<String, dynamic>;
 
-                // Determinar si puede borrar
+                final commentId = commentDoc.id;
+                final String text = data["text"] ?? "";
+                final String userName = data["userName"] ?? "Usuario";
+                final String userId = data["userId"] ?? "";
+
+                final Timestamp? ts = data["timestamp"];
+                final String formattedDate = ts != null
+                    ? "${ts.toDate().day.toString().padLeft(2, '0')}/"
+                          "${ts.toDate().month.toString().padLeft(2, '0')}/"
+                          "${ts.toDate().year}"
+                    : "";
+
                 final bool canDelete =
-                    _currentUser != null && commentUserId == _currentUser!.uid;
+                    _currentUser != null && _currentUser!.uid == userId;
 
-                final timestamp = commentData['timestamp'] as Timestamp?;
-                final date = timestamp != null
-                    ? ' - ${DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch).toLocal().toString().split(' ')[0]}'
-                    : '';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // =============================
+                      // AVATAR DEL USUARIO
+                      // =============================
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection("users")
+                            .doc(userId)
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey,
+                              child: Icon(Icons.person, color: Colors.white),
+                            );
+                          }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Nombre de usuario y fecha
-                        Flexible(
-                          child: Text(
-                            '$userName$date',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: _primaryGreen,
-                              fontFamily: 'roboto',
+                          final userData =
+                              snapshot.data!.data() as Map<String, dynamic>?;
+                          final String? avatarUrl = userData?["photoURL"];
+
+                          return CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage:
+                                avatarUrl != null && avatarUrl.isNotEmpty
+                                ? NetworkImage(avatarUrl)
+                                : null,
+                            child: avatarUrl == null || avatarUrl.isEmpty
+                                ? const Icon(Icons.person, color: Colors.white)
+                                : null,
+                          );
+                        },
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // =============================
+                      // CONTENIDO DEL COMENTARIO
+                      // =============================
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    "$userName • $formattedDate",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: _primaryGreen,
+                                      fontFamily: 'roboto',
+                                    ),
+                                  ),
+                                ),
+                                if (canDelete)
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: _orangeColor,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      _showDeleteConfirmationDialog(
+                                        commentId,
+                                        context,
+                                      );
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                              ],
                             ),
-                          ),
-                        ),
-
-                        // Botón de ELIMINAR (Solo si canDelete es true)
-                        if (canDelete)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: _orangeColor,
-                              size: 20,
+                            const SizedBox(height: 4),
+                            Text(
+                              text,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: _unselectedDarkColor,
+                                fontFamily: 'roboto',
+                              ),
                             ),
-                            onPressed: () {
-                              _showDeleteConfirmationDialog(commentId, context);
-                            },
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0, bottom: 10.0),
-                      child: Text(
-                        commentText,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: _unselectedDarkColor,
-                          fontFamily: 'roboto',
+                            const SizedBox(height: 8),
+                            const Divider(height: 1, color: _lightGrey),
+                          ],
                         ),
                       ),
-                    ),
-                    const Divider(height: 1, color: _lightGrey),
-                    const SizedBox(height: 10),
-                  ],
+                    ],
+                  ),
                 );
               },
             );

@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eco_granel_app/login/inicio_screen.dart';
 import 'package:eco_granel_app/screens/edit_profile_screen.dart';
 import 'package:eco_granel_app/screens/guardado_screen.dart';
-import 'package:eco_granel_app/screens/like_screen.dart'; // Importación necesaria para LikesScreen
+import 'package:eco_granel_app/screens/like_screen.dart';
 import 'privacidad_screen.dart';
 import 'condiciones_screen.dart';
 
@@ -111,7 +111,7 @@ class _SectionHeader extends StatelessWidget {
 }
 
 // ----------------------------------------------------------------------
-// PERFIL SCREEN (Contiene la lógica de navegación y cierre de sesión)
+// PERFIL SCREEN
 // ----------------------------------------------------------------------
 
 class PerfilScreen extends StatefulWidget {
@@ -159,9 +159,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
-  // ----------------------------------------------------------------------
-  // FUNCIÓN AJUSTADA: DIÁLOGO DE CONFIRMACIÓN CON ESTILO PERSONALIZADO
-  // ----------------------------------------------------------------------
+  // Función: DIÁLOGO DE CONFIRMACIÓN CON ESTILO PERSONALIZADO
   void _confirmLogout() {
     showDialog(
       context: context,
@@ -325,7 +323,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
             _ProfileOptionRow(
               title: "Likes",
               icon: Icons.favorite_border,
-              onTap: _navigateToLikes, // <-- ¡Actualizado para navegar!
+              onTap: _navigateToLikes,
             ),
             _ProfileOptionRow(
               title: "Mis pedidos",
@@ -399,7 +397,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 }
 
 // ----------------------------------------------------------------------
-// PROFILE HEADER (Sin cambios)
+// PROFILE HEADER (CORREGIDO PARA ACTUALIZACIÓN INSTANTÁNEA)
 // ----------------------------------------------------------------------
 
 class _ProfileHeader extends StatefulWidget {
@@ -412,11 +410,13 @@ class _ProfileHeader extends StatefulWidget {
 class _ProfileHeaderState extends State<_ProfileHeader> {
   String _displayName = 'Cargando...';
   String _username = '@cargando';
+  String? _photoURL;
   User? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    // Carga inicial de datos al crear el widget
     _loadUserData();
   }
 
@@ -436,19 +436,28 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
 
         if (doc.exists) {
           final data = doc.data();
-          setState(() {
-            // Lee 'fullName' (Nombre y Apellido) de Firestore
-            _displayName = data?['fullName'] ?? 'Usuario';
+          if (mounted) {
+            setState(() {
+              // Lee 'fullName' (Nombre y Apellido) de Firestore
+              _displayName = data?['fullName'] ?? 'Usuario';
 
-            // Lee 'username' (Alias) de Firestore
-            _username = '@${data?['username'] ?? 'usuario'}';
-          });
+              // Lee 'username' (Alias) de Firestore
+              _username = '@${data?['username'] ?? 'usuario'}';
+
+              // Leer el photoURL de Firestore
+              _photoURL = data?['photoURL'] as String?;
+            });
+          }
         } else {
           // Fallback si el documento no existe (usa la información de Auth)
-          setState(() {
-            _displayName = _currentUser!.displayName ?? 'Usuario';
-            _username = '@${_currentUser!.email?.split('@')[0] ?? 'usuario'}';
-          });
+          if (mounted) {
+            setState(() {
+              _displayName = _currentUser!.displayName ?? 'Usuario';
+              _username = '@${_currentUser!.email?.split('@')[0] ?? 'usuario'}';
+              // Fallback de photoURL usando la URL de Firebase Auth si existe
+              _photoURL = _currentUser!.photoURL;
+            });
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -460,20 +469,28 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       }
     } else {
       // Estado si no hay un usuario logueado
-      setState(() {
-        _displayName = 'Invitado';
-        _username = 'Inicia sesión para ver tu perfil';
-      });
+      if (mounted) {
+        setState(() {
+          _displayName = 'Invitado';
+          _username = 'Inicia sesión para ver tu perfil';
+          _photoURL = null; // Asegura que no haya URL de invitado
+        });
+      }
     }
   }
 
-  // FUNCIÓN DE NAVEGACIÓN A EDITAR PERFIL
-  void _navigateToEditProfile() {
+  // FUNCIÓN DE NAVEGACIÓN A EDITAR PERFIL - MODIFICADA
+  // Ahora es asíncrona y llama a _loadUserData() al regresar.
+  void _navigateToEditProfile() async {
     if (_currentUser != null) {
-      Navigator.push(
+      // Espera hasta que la pantalla EditarPerfilScreen se cierre
+      await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const EditarPerfilScreen()),
       );
+
+      // Al regresar, recarga los datos del usuario para actualizar el avatar y el texto.
+      _loadUserData();
     } else {
       // Muestra un mensaje si no hay usuario logueado
       ScaffoldMessenger.of(context).showSnackBar(
@@ -486,6 +503,27 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
+    // Determinar el widget del avatar
+    Widget avatarWidget;
+    if (_photoURL != null && _photoURL!.isNotEmpty) {
+      // Si hay una URL de foto, usa NetworkImage
+      avatarWidget = CircleAvatar(
+        radius: 35,
+        // Usa un key único para asegurar que NetworkImage se recargue si la URL cambia
+        key: ValueKey(_photoURL),
+        backgroundImage: NetworkImage(_photoURL!),
+        backgroundColor:
+            Colors.transparent, // Color de fondo si la imagen no carga
+      );
+    } else {
+      // Si no hay URL, usa el icono de persona por defecto
+      avatarWidget = CircleAvatar(
+        radius: 35,
+        backgroundColor: Colors.grey[200],
+        child: const Icon(Icons.person, size: 40, color: _primaryGreen),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 18.0, 0.0),
       child: Column(
@@ -493,11 +531,8 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              CircleAvatar(
-                radius: 35,
-                backgroundColor: Colors.grey[200],
-                child: const Icon(Icons.person, size: 40, color: _primaryGreen),
-              ),
+              // Usar el widget de avatar determinado
+              avatarWidget,
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
