@@ -1,10 +1,18 @@
-// ** CAMBIOS PARA FIREBASE **
-// 1. Importaciones necesarias para Firebase
+// Importaciones necesarias para Firebase
 import 'package:firebase_core/firebase_core.dart';
 import 'package:eco_granel_app/firebase_options.dart';
 import 'package:flutter/material.dart';
+// 💡 Importación de persistencia para guardar el estado
+import 'package:shared_preferences/shared_preferences.dart';
+// 💡 Importación de Firebase Auth para verificar el estado de inicio de sesión
+import 'package:firebase_auth/firebase_auth.dart';
 
-// Importaciones de tus pantallas
+// Importación de tu pantalla de Onboarding (Asegúrate de que la ruta sea correcta)
+import 'package:eco_granel_app/onboarding/onboarding_screen.dart';
+// importacion pantalla de InicioScreen
+import 'package:eco_granel_app/login/inicio_screen.dart'; // 💡 Asegúrate de que esta pantalla sea la que quieres mostrar al NO estar logueado.
+
+// Importaciones de tus pantallas principales
 import 'package:eco_granel_app/screens/forum_screen.dart';
 import 'package:eco_granel_app/screens/home_screen.dart';
 import 'package:eco_granel_app/screens/perfil_screen.dart';
@@ -12,17 +20,36 @@ import 'package:eco_granel_app/screens/recetas_screen.dart';
 import 'package:eco_granel_app/screens/carrito_screen.dart';
 import 'package:eco_granel_app/screens/tienda_screen.dart';
 
-// Color verde para el tema
+// Definiciones de Color
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
+
+// 💡 CLAVE DE SHARED PREFERENCES
+const String kOnboardingCompleteKey = 'onboarding_complete';
+// 💡 CAMBIO: Ya no es necesaria una clave separada para la autenticación si usamos Firebase Auth.
+
+// 💡 CAMBIO: Variables globales para almacenar el estado inicial
+late bool _onboardingIsComplete;
+// 💡 CAMBIO: El usuario de Firebase (será null si no está autenticado)
+User? _currentUser;
 
 // ** FUNCIÓN MAIN MODIFICADA **
 void main() async {
   // Asegura que Flutter esté listo para la inicialización asíncrona (await)
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa Firebase usando las opciones específicas de la plataforma
+  // Inicializa Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // 1. OBTENER ESTADO DE ONBOARDING
+  final prefs = await SharedPreferences.getInstance();
+
+  // Leer el valor. Si es nulo (primera vez), se asume que NO está completo (false).
+  _onboardingIsComplete = prefs.getBool(kOnboardingCompleteKey) ?? false;
+
+  // 💡 CAMBIO: OBTENER ESTADO DE AUTENTICACIÓN
+  // Obtiene el usuario actualmente logueado. Si es null, el usuario no está autenticado.
+  _currentUser = FirebaseAuth.instance.currentUser;
 
   // Ejecuta la aplicación
   runApp(const MyApp());
@@ -31,6 +58,23 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  // 💡 CAMBIO: Nueva función para determinar la pantalla inicial
+  Widget _getInitialScreen() {
+    if (!_onboardingIsComplete) {
+      // 1. Onboarding NO Completo: Mostrar OnboardingScreen
+      return const InitialScreenDecider();
+    } else {
+      // 2. Onboarding COMPLETO: Decidir entre InicioScreen y HomeScreen
+      if (_currentUser != null) {
+        // 2a. SÍ Autenticado: Mostrar la pantalla principal (HomeScreen/EcoGranel)
+        return const EcoGranel();
+      } else {
+        // 2b. NO Autenticado: Mostrar la pantalla de inicio de sesión/registro
+        return const InicioScreen();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +102,52 @@ class MyApp extends StatelessWidget {
           selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      home: const EcoGranel(),
+      // 2. LÓGICA DE NAVEGACIÓN INICIAL AJUSTADA
+      home: _getInitialScreen(),
     );
   }
 }
+
+// 💡 WIDGET PARA GESTIONAR LA PANTALLA INICIAL Y EL ESTADO DE ONBOARDING
+class InitialScreenDecider extends StatefulWidget {
+  const InitialScreenDecider({super.key});
+
+  @override
+  State<InitialScreenDecider> createState() => _InitialScreenDeciderState();
+}
+
+class _InitialScreenDeciderState extends State<InitialScreenDecider> {
+  // Inicialmente, si llegamos aquí, mostramos el onboarding
+  bool _showOnboarding = true;
+
+  // Función de callback que se ejecuta cuando el usuario termina o salta el onboarding
+  void _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // 3. GUARDAR EL ESTADO COMO COMPLETADO (true)
+    await prefs.setBool(kOnboardingCompleteKey, true);
+
+    setState(() {
+      _showOnboarding =
+          false; // Esto dispara el cambio a la pantalla de InicioScreen
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showOnboarding) {
+      // Muestra la pantalla de Onboarding y le pasa el callback para guardar el estado.
+      return OnboardingScreen(onOnboardingComplete: _completeOnboarding);
+    } else {
+      // 💡 CAMBIO: Después de completar el onboarding, va a InicioScreen (ya que el usuario aún no se ha logueado).
+      return const InicioScreen();
+    }
+  }
+}
+
+// --- WIDGET PRINCIPAL DE LA APLICACIÓN (EcoGranel) ---
+// Este widget es la pantalla principal que se muestra SÍ el usuario está autenticado.
+// No necesita cambios, ya que ahora se accede a ella únicamente si _currentUser != null.
 
 class EcoGranel extends StatefulWidget {
   const EcoGranel({super.key});
@@ -73,11 +159,11 @@ class EcoGranel extends StatefulWidget {
 class _EcoGranelState extends State<EcoGranel> {
   int _selectedIndex = 0;
   bool _isCartOpen = false;
-
+  // ... (El resto del código de EcoGranel sigue igual)
   // Constante para el índice de la pantalla de perfil
   static const int _perfilIndex = 4;
 
-  // 💡 AJUSTE CLAVE: Usamos un getter para construir la lista de widgets y pasar el callback.
+  // Usamos un getter para construir la lista de widgets
   List<Widget> get _widgetOptions => <Widget>[
     // Pasamos el método _onItemTapped (que cambia el índice) a HomeScreen
     HomeScreen(onNavigate: _onItemTapped),
@@ -108,6 +194,7 @@ class _EcoGranelState extends State<EcoGranel> {
   // Widget para crear el AppBar
   PreferredSizeWidget _buildCustomAppBar() {
     return AppBar(
+      automaticallyImplyLeading: false,
       centerTitle: false,
       title: Padding(
         padding: const EdgeInsets.only(
@@ -147,20 +234,18 @@ class _EcoGranelState extends State<EcoGranel> {
             absorbing: _isCartOpen,
             child: IndexedStack(
               index: _selectedIndex,
-              children: _widgetOptions, // 👈 Usa el getter aquí
+              children: _widgetOptions,
             ),
           ),
 
-          //Usamos Visibility (o Offstage) para mostrar/ocultar instantáneamente el carrito.
+          // Carrito como superposición
           Visibility(
             visible: _isCartOpen,
-            // Oscurece el fondo antes de que se muestre el carrito si lo necesitas,
-            // color: Colors.black.withOpacity(0.4),
             child: CarritoScreen(onClose: _closeCart, onGoToShop: _goToShop),
           ),
         ],
       ),
-      // Se mantiene la barra de navegación inferior, ya que es parte del layout principal.
+      // Barra de navegación inferior
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
