@@ -1,5 +1,6 @@
 import 'package:eco_granel_app/login/inicio_screen.dart';
 import 'package:eco_granel_app/login/register_screen.dart';
+import 'package:eco_granel_app/login/forgot_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Importa las pantallas necesarias para la navegación, como la pantalla principal (EcoGranel).
@@ -93,12 +94,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Simulación de navegación a la pantalla de Olvidé mi Contraseña
   void _forgotPassword() {
-    // Implementar la navegación a la pantalla de restablecimiento de contraseña
-    // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navegar a la pantalla de olvidé mi contraseña'),
-      ),
+    // CAMBIO CLAVE: Navegación real a la nueva pantalla
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
     );
   }
 
