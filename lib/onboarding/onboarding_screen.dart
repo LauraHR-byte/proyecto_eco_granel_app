@@ -6,7 +6,7 @@ import 'package:eco_granel_app/login/inicio_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const Color _primaryGreen = Color(0xFF4CAF50);
-const Color _brownButtonColor = Color(0xFFB85E2C); // Color del botón Continuar
+const Color _brownButtonColor = Color(0xFFC76939); // Color del botón Continuar
 
 // --- 1. ESTRUCTURA DE DATOS (Se mantiene igual) ---
 class OnboardingPageData {
@@ -122,14 +122,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  // NUEVO GETTER: Comprueba si es la última página
+  bool get _isLastPage {
+    return _onboardingPages.isNotEmpty &&
+        _currentPage == _onboardingPages.length - 1;
+  }
+
   // Define el texto del botón según si es la última página
   String get _buttonText {
     // Usamos _onboardingPages.length para asegurar que los datos ya están cargados
-    final isLastPage =
-        _onboardingPages.isNotEmpty &&
-        _currentPage == _onboardingPages.length - 1;
-    return isLastPage ? "Comenzar" : "Continuar";
+    return _isLastPage ? "Comenzar" : "Continuar";
   }
+
+  // NUEVO GETTER para el color del botón
+  Color get _buttonColor {
+    // Si es la última página, usa _primaryGreen, de lo contrario, usa _brownButtonColor
+    return _isLastPage ? _primaryGreen : _brownButtonColor;
+  }
+
+  // *** NUEVA FUNCIÓN AÑADIDA PARA SALTAR A LA ÚLTIMA PÁGINA ***
+  void _goToLastPage() {
+    if (_onboardingPages.isNotEmpty) {
+      _pageController.animateToPage(
+        _onboardingPages.length - 1, // El índice de la última página
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+  // *** FIN DE LA NUEVA FUNCIÓN ***
 
   @override
   void dispose() {
@@ -166,23 +187,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           children: [
             // Botón Saltar alineado a la derecha
-            Align(
+            // *** INICIO DEL AJUSTE PARA MANTENER LA MARGEN SUPERIOR ***
+            Container(
+              // Este contenedor o SizedBox garantiza que el espacio superior sea el mismo
+              // en todas las páginas, independientemente de si el botón "Saltar" se muestra o no.
               alignment: Alignment.topRight,
-              child: TextButton(
-                // CAMBIO CLAVE: Usa Navigator.pushReplacement para ir a InicioScreen
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const InicioScreen(),
+              // Ajusta este padding si el TextButton original tenía más padding.
+              padding: const EdgeInsets.only(right: 8.0, top: 8.0),
+              child: _isLastPage
+                  ? const SizedBox(
+                      // Usamos un SizedBox para ocupar el mismo espacio
+                      // que ocuparía el TextButton si estuviera visible.
+                      // La altura de un TextButton por defecto es aproximadamente 48-50.
+                      height: 48,
+                    )
+                  : TextButton(
+                      // *** MODIFICACIÓN CLAVE AQUÍ: Llama a _goToLastPage() ***
+                      onPressed: _goToLastPage,
+                      // *** FIN DE LA MODIFICACIÓN CLAVE ***
+                      child: const Text(
+                        "Saltar",
+                        style: TextStyle(
+                          color: _brownButtonColor,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
-                  );
-                },
-                child: const Text(
-                  "Saltar",
-                  style: TextStyle(color: _brownButtonColor, fontSize: 16),
-                ),
-              ),
             ),
+            // *** FIN DEL AJUSTE ***
 
             // PageView que ocupa la mayor parte del espacio
             Expanded(
@@ -202,7 +234,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
-                vertical: 16.0,
+                vertical: 24.0,
               ),
               child: Column(
                 children: [
@@ -224,7 +256,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: ElevatedButton(
                       onPressed: _goToNextPage,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _brownButtonColor,
+                        // *** CAMBIO REALIZADO AQUÍ: Usa _buttonColor ***
+                        backgroundColor: _buttonColor,
+                        // *** FIN DEL CAMBIO ***
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -273,7 +307,7 @@ class OnboardingPageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40.0),
+      padding: const EdgeInsets.symmetric(horizontal: 60.0, vertical: 60.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -281,18 +315,18 @@ class OnboardingPageView extends StatelessWidget {
           Text(
             data.title,
             style: const TextStyle(
-              fontSize: 32,
+              fontSize: 30,
               fontWeight: FontWeight.bold,
               color: _primaryGreen,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 30),
 
           // Descripción
           Text(
             data.description,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               color: Color(0xFF333333),
               height: 1.4,
             ),

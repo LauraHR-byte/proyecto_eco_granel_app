@@ -2,9 +2,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:eco_granel_app/firebase_options.dart';
 import 'package:flutter/material.dart';
-// 💡 Importación de persistencia para guardar el estado
+// Importación de persistencia para guardar el estado
 import 'package:shared_preferences/shared_preferences.dart';
-// 💡 Importación de Firebase Auth para verificar el estado de inicio de sesión
+// Importación de Firebase Auth para verificar el estado de inicio de sesión
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Importación de tu pantalla de Onboarding (Asegúrate de que la ruta sea correcta)
@@ -24,13 +24,13 @@ import 'package:eco_granel_app/screens/tienda_screen.dart';
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
 
-// 💡 CLAVE DE SHARED PREFERENCES
+// CLAVE DE SHARED PREFERENCES
 const String kOnboardingCompleteKey = 'onboarding_complete';
-// 💡 CAMBIO: Ya no es necesaria una clave separada para la autenticación si usamos Firebase Auth.
+// CAMBIO: Ya no es necesaria una clave separada para la autenticación si usamos Firebase Auth.
 
-// 💡 CAMBIO: Variables globales para almacenar el estado inicial
+// CAMBIO: Variables globales para almacenar el estado inicial
 late bool _onboardingIsComplete;
-// 💡 CAMBIO: El usuario de Firebase (será null si no está autenticado)
+// CAMBIO: El usuario de Firebase (será null si no está autenticado)
 User? _currentUser;
 
 // ** FUNCIÓN MAIN MODIFICADA **
@@ -47,7 +47,7 @@ void main() async {
   // Leer el valor. Si es nulo (primera vez), se asume que NO está completo (false).
   _onboardingIsComplete = prefs.getBool(kOnboardingCompleteKey) ?? false;
 
-  // 💡 CAMBIO: OBTENER ESTADO DE AUTENTICACIÓN
+  // CAMBIO: OBTENER ESTADO DE AUTENTICACIÓN
   // Obtiene el usuario actualmente logueado. Si es null, el usuario no está autenticado.
   _currentUser = FirebaseAuth.instance.currentUser;
 
@@ -59,7 +59,7 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // 💡 CAMBIO: Nueva función para determinar la pantalla inicial
+  // CAMBIO: Nueva función para determinar la pantalla inicial
   Widget _getInitialScreen() {
     if (!_onboardingIsComplete) {
       // 1. Onboarding NO Completo: Mostrar OnboardingScreen
@@ -108,7 +108,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// 💡 WIDGET PARA GESTIONAR LA PANTALLA INICIAL Y EL ESTADO DE ONBOARDING
+// WIDGET PARA GESTIONAR LA PANTALLA INICIAL Y EL ESTADO DE ONBOARDING
 class InitialScreenDecider extends StatefulWidget {
   const InitialScreenDecider({super.key});
 
@@ -139,7 +139,7 @@ class _InitialScreenDeciderState extends State<InitialScreenDecider> {
       // Muestra la pantalla de Onboarding y le pasa el callback para guardar el estado.
       return OnboardingScreen(onOnboardingComplete: _completeOnboarding);
     } else {
-      // 💡 CAMBIO: Después de completar el onboarding, va a InicioScreen (ya que el usuario aún no se ha logueado).
+      // CAMBIO: Después de completar el onboarding, va a InicioScreen (ya que el usuario aún no se ha logueado).
       return const InicioScreen();
     }
   }
