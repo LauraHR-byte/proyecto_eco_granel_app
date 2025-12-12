@@ -153,6 +153,7 @@ class _CommentItem extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 12),
           // AÑADIDO: Botón de eliminar, visible solo para el autor
           if (canDelete)
             IconButton(
@@ -190,14 +191,23 @@ class _CommentsModalState extends State<CommentsModal> {
   // Lógica para agregar comentario a Firestore
   void _addComment() async {
     final String content = _commentController.text.trim();
+
     if (content.isNotEmpty && currentUser != null) {
-      final String authorName =
-          currentUser!.displayName ?? 'Usuario Autenticado';
+      final String userId = currentUser!.uid;
 
       try {
+        // 🔥 1. Obtener username desde Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+
+        final String authorName = userDoc.data()?['username'] ?? 'Usuario';
+
+        // 🔥 2. Publicar comentario usando username real
         await FirebaseFirestore.instance.collection('comments').add({
           'postId': widget.postId,
-          'userId': currentUser!.uid,
+          'userId': userId,
           'authorName': authorName,
           'content': content,
           'timestamp': FieldValue.serverTimestamp(),
@@ -209,7 +219,6 @@ class _CommentsModalState extends State<CommentsModal> {
           FocusScope.of(context).unfocus();
         }
       } catch (e) {
-        // Manejar errores
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al publicar comentario: $e')),
@@ -403,7 +412,7 @@ class _CommentsModalState extends State<CommentsModal> {
                       .map((doc) => CommentData.fromFirestore(doc))
                       .toList();
 
-                  if (comments.isEmpty) {
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 20.0),
                       child: Center(

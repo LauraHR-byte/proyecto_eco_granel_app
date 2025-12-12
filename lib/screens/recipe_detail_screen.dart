@@ -504,7 +504,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                 final commentId = commentDoc.id;
                 final String text = data["text"] ?? "";
-                final String userName = data["userName"] ?? "Usuario";
+                final String userName = data["username"] ?? "Usuario";
                 final String userId = data["userId"] ?? "";
 
                 final Timestamp? ts = data["timestamp"];
@@ -518,13 +518,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     _currentUser != null && _currentUser!.uid == userId;
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
+                  padding: const EdgeInsets.only(bottom: 18.0),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // =============================
-                      // AVATAR DEL USUARIO
-                      // =============================
+                      // ---------------------------
+                      // Avatar del usuario
+                      // ---------------------------
                       FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
                             .collection("users")
@@ -545,7 +545,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                           return CircleAvatar(
                             radius: 20,
-                            backgroundColor: Colors.grey[300],
+                            backgroundColor: Colors.grey[200],
                             backgroundImage:
                                 avatarUrl != null && avatarUrl.isNotEmpty
                                 ? NetworkImage(avatarUrl)
@@ -557,61 +557,72 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         },
                       ),
 
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
 
-                      // =============================
-                      // CONTENIDO DEL COMENTARIO
-                      // =============================
+                      // ---------------------------
+                      // Contenido del comentario
+                      // ---------------------------
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Nombre + fecha + eliminar
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Flexible(
                                   child: Text(
-                                    "$userName • $formattedDate",
+                                    userName,
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: _primaryGreen,
-                                      fontFamily: 'roboto',
+                                      fontFamily: "roboto",
+                                      color: _unselectedDarkColor,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                if (canDelete)
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: _orangeColor,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {
-                                      _showDeleteConfirmationDialog(
-                                        commentId,
-                                        context,
-                                      );
-                                    },
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
+                                const SizedBox(width: 8),
+                                Text(
+                                  formattedDate,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: "roboto",
+                                    color: Colors.grey,
                                   ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+
+                            const SizedBox(height: 2),
+
+                            // Texto del comentario
                             Text(
                               text,
                               style: const TextStyle(
-                                fontSize: 15,
-                                color: _unselectedDarkColor,
-                                fontFamily: 'roboto',
+                                fontSize: 14,
+                                fontFamily: "roboto",
+                                color: _commentTextColor,
                               ),
                             ),
-                            const SizedBox(height: 8),
+
+                            const SizedBox(height: 12),
                             const Divider(height: 1, color: _lightGrey),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      // AÑADIDO: Botón de eliminar, visible solo para el autor
+                      if (canDelete)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_forever,
+                            color: _orangeColor,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            _showDeleteConfirmationDialog(commentId, context);
+                          },
+                        ),
                     ],
                   ),
                 );
@@ -647,11 +658,29 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
 
     final currentUserId = _currentUser!.uid;
-    final currentUserName =
-        _currentUser!.displayName ??
-        _currentUser!.email?.split('@')[0] ??
-        "Usuario Registrado";
 
+    // ================================
+    // 🔥 Obtener username desde Firestore
+    // ================================
+    String userName = "Usuario";
+
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        userName = data?['username'] ?? "Usuario";
+      }
+    } catch (e) {
+      log("Error obteniendo username: $e");
+    }
+
+    // ================================
+    // Guardar comentario
+    // ================================
     try {
       await FirebaseFirestore.instance
           .collection('recetas')
@@ -659,7 +688,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           .collection('comments')
           .add({
             'userId': currentUserId,
-            'userName': currentUserName,
+            'username': userName,
             'text': commentText,
             'timestamp': FieldValue.serverTimestamp(),
           });
