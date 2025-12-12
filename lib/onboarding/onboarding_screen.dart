@@ -6,6 +6,7 @@ import 'package:eco_granel_app/login/inicio_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const Color _primaryGreen = Color(0xFF4CAF50);
+const Color _textColor = Color(0xFF333333);
 const Color _brownButtonColor = Color(0xFFC76939); // Color del botón Continuar
 
 // --- 1. ESTRUCTURA DE DATOS (Se mantiene igual) ---
@@ -208,8 +209,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: const Text(
                         "Saltar",
                         style: TextStyle(
-                          color: _brownButtonColor,
-                          fontSize: 16,
+                          color: _textColor,
+                          fontFamily: "roboto",
+                          fontSize: 15,
                         ),
                       ),
                     ),
@@ -316,6 +318,7 @@ class OnboardingPageView extends StatelessWidget {
             data.title,
             style: const TextStyle(
               fontSize: 30,
+              fontFamily: "roboto",
               fontWeight: FontWeight.bold,
               color: _primaryGreen,
             ),
@@ -327,7 +330,8 @@ class OnboardingPageView extends StatelessWidget {
             data.description,
             style: const TextStyle(
               fontSize: 18,
-              color: Color(0xFF333333),
+              color: _textColor,
+              fontFamily: "roboto",
               height: 1.4,
             ),
           ),
