@@ -1,4 +1,8 @@
 import 'package:eco_granel_app/login/inicio_screen.dart';
+// Importamos la librería de gestos para poder hacer clic en partes específicas del texto
+import 'package:flutter/gestures.dart';
+import 'package:eco_granel_app/screens/condiciones_screen.dart';
+import 'package:eco_granel_app/screens/privacidad_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // NECESARIO PARA FIRESTORE
@@ -7,6 +11,8 @@ import 'package:eco_granel_app/main.dart';
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF424242);
 const Color _primaryOrange = Color.fromRGBO(184, 94, 44, 1);
+// NUEVA CONSTANTE DE COLOR PARA EL TEXTO DE TÉRMINOS
+const Color _termsTextColor = Color(0xFF424242); // Un color gris oscuro
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,6 +36,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _showPassword = false;
   String? _errorMessage;
+  // NUEVO ESTADO PARA EL CHECKBOX
+  bool _acceptedTerms = false;
 
   @override
   void dispose() {
@@ -43,7 +51,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Función de registro de usuario
   Future<void> _signUp() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate() || !_acceptedTerms) {
+      // Se añade la validación de términos
+      if (!_acceptedTerms) {
+        setState(() {
+          _errorMessage =
+              'Debes aceptar los Términos y Condiciones y la Política de privacidad.';
+        });
+      }
       return;
     }
 
@@ -143,6 +158,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // Se usó la constante de color para facilitar el cambio.
+  Widget _buildTermsAndPrivacyText() {
+    return RichText(
+      text: TextSpan(
+        text: 'He leído y acepto los ',
+        style: const TextStyle(
+          color: _termsTextColor,
+          fontFamily: "roboto",
+          fontSize: 16,
+          height: 1.2,
+        ),
+        children: <TextSpan>[
+          TextSpan(
+            text: 'Términos y Condiciones',
+            style: TextStyle(
+              color: _primaryOrange,
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+            ),
+            // *** GESTURE RECOGNIZER PARA TÉRMINOS Y CONDICIONES ***
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                // Navegar a CondicionesScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CondicionesScreen(),
+                  ),
+                );
+              },
+          ),
+          const TextSpan(text: ' y la '),
+          TextSpan(
+            text: 'Política de privacidad',
+            style: TextStyle(
+              color: _primaryOrange,
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+            ),
+            // *** GESTURE RECOGNIZER PARA POLÍTICA DE PRIVACIDAD ***
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                // Navegar a PrivacidadScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PrivacidadScreen(),
+                  ),
+                );
+              },
+          ),
+          const TextSpan(
+            // Se hereda el estilo principal, que ahora usa _termsTextColor
+            text: ' de Eco Granel.',
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,6 +263,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 40),
 
+              // ... (Campos de texto)
               // Campo Nombre
               _buildTextField(
                 controller: _nameController,
@@ -253,35 +329,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: RichText(
-                  text: const TextSpan(
-                    text:
-                        'Al continuar, aceptas los términos y condiciones de uso. Lea ',
-                    style: TextStyle(
-                      color: _unselectedDarkColor,
-                      fontFamily: "roboto",
-                      fontSize: 13,
-                    ),
-                    children: <TextSpan>[
-                      TextSpan(
-                        text: 'aquí',
-                        style: TextStyle(
-                          color: _primaryOrange,
-                          fontFamily: "roboto",
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
+              // --- INICIO DE LA MODIFICACIÓN PARA TÉRMINOS Y CONDICIONES ---
+              Row(
+                crossAxisAlignment: CrossAxisAlignment
+                    .start, // Asegura que el texto y el checkbox se alineen en la parte superior
+                children: [
+                  Container(
+                    // Utilizamos un Container para dar la forma cuadrada al Checkbox
+                    width: 30,
+                    height: 30,
+                    margin: const EdgeInsets.only(
+                      right: 8.0,
+                      top: 0.0,
+                    ), // Espacio a la derecha
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors
+                            .grey
+                            .shade500, // Color del borde del cuadrado
+                        width: 1.0,
                       ),
-                      TextSpan(text: ' la política de privacidad.'),
-                    ],
+                      borderRadius: BorderRadius.circular(
+                        4.0,
+                      ), // Bordes ligeramente redondeados
+                    ),
+                    child: Checkbox(
+                      value: _acceptedTerms,
+                      onChanged: (bool? newValue) {
+                        setState(() {
+                          _acceptedTerms = newValue ?? false;
+                        });
+                      },
+                      activeColor: Colors
+                          .transparent, // Hacemos transparente el color de fondo cuando está marcado
+                      checkColor: _primaryGreen, // Color del "check"
+                      materialTapTargetSize: MaterialTapTargetSize
+                          .shrinkWrap, // Reduce el área de toque
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
-                ),
+                  // Se envuelve en Flexible para evitar un overflow de texto en pantallas pequeñas
+                  Flexible(child: _buildTermsAndPrivacyText()),
+                ],
               ),
+
+              // --- ---
               const SizedBox(height: 24),
 
+              // ---ajuste de align text y color en mensaje si no se acepta terminos y politicas---
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
@@ -292,7 +387,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       fontFamily: "roboto",
                       fontWeight: FontWeight.bold,
                     ),
-                    textAlign: TextAlign.center,
+                    textAlign: TextAlign
+                        .start, // Aseguramos alineación a la izquierda si hay error
                   ),
                 ),
 
