@@ -1,3 +1,6 @@
+import 'package:provider/provider.dart';
+import 'package:eco_granel_app/providers/cart_provider.dart';
+//import 'package:eco_granel_app/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -227,12 +230,42 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
 
   // Lógica para el botón de Agregar al Carrito (simulado)
   void _addToCart() {
-    final currentPrice = _calculateTotalPrice();
+    // 1. Obtener el Provider
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    // 2. Extraer los datos necesarios
+    final basePrice = widget.product.priceMap[_selectedWeight];
+
+    if (basePrice == null) {
+      // Manejar el caso donde no hay precio (no debería ocurrir si la lógica de chip es correcta)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Error: Precio no disponible para el peso seleccionado.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 3. Añadir el item al carrito
+    cartProvider.addItemToCart(
+      productId: widget.product.id,
+      name: widget.product.name,
+      imagePath: widget.product.imagePath,
+      weightUnit: _selectedWeight,
+      unitPrice: basePrice, // Precio por unidad de peso
+      quantity: _quantity, // Cantidad de unidades
+    );
+
+    // 4. Muestra la confirmación (opcional, podrías usar un toast mejor)
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Añadido al carrito: $_quantity unidad(es) de ${widget.product.name} en $_selectedWeight por $currentPrice',
+          '¡$_quantity x $_selectedWeight de ${widget.product.name} añadido al carrito!',
         ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: _primaryGreen,
       ),
     );
   }
