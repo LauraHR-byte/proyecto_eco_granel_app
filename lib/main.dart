@@ -26,6 +26,8 @@ import 'package:eco_granel_app/screens/recetas_screen.dart';
 import 'package:eco_granel_app/screens/carrito_screen.dart';
 import 'package:eco_granel_app/screens/tienda_screen.dart';
 
+// Widget
+
 // Definiciones de Color
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF333333);
@@ -195,44 +197,48 @@ class _EcoGranelState extends State<EcoGranel> {
         ),
       ),
       actions: <Widget>[
-        Consumer<CartProvider>(
-          builder: (context, cartProvider, child) {
-            final itemCount = cartProvider.itemCount;
-            return Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.shopping_cart, size: _iconSize),
-                  onPressed: _openCart,
-                  color: Theme.of(context).appBarTheme.foregroundColor,
-                ),
-                if (itemCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        // ***** CORRECCIÓN 2: Uso de _orangeColor definido *****
-                        color: _orangeColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 18,
-                        minHeight: 18,
-                      ),
-                      child: Text(
-                        itemCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: Consumer<CartProvider>(
+            builder: (context, cartProvider, child) {
+              final itemCount = cartProvider.itemCount;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart, size: 30),
+                    onPressed: _openCart,
+                    color: Theme.of(context).appBarTheme.foregroundColor,
+                  ),
+                  if (itemCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          // ***** CORRECCIÓN 2: Uso de _orangeColor definido *****
+                          color: _orangeColor,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        textAlign: TextAlign.center,
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          itemCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ],
     );

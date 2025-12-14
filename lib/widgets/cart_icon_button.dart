@@ -38,8 +38,8 @@ class CartIconButton extends StatelessWidget {
             ),
             if (itemCount > 0)
               Positioned(
-                right: 4,
-                top: 4,
+                right: 0,
+                top: 0,
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   constraints: const BoxConstraints(

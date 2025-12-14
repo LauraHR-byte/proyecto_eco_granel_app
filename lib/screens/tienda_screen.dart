@@ -48,19 +48,28 @@ class Product {
 // --- Componente de Tarjeta de Producto (_ProductCard) (MODIFICADO) ---
 class _ProductCard extends StatelessWidget {
   final Product product;
-  // Se mantiene onAddToCart, pero para el tap en la tarjeta se usará un onTap específico.
-  // Lo vamos a usar para el botón, pero lo modificaremos para que navegue.
   final VoidCallback onAddToCart;
 
   const _ProductCard({required this.product, required this.onAddToCart});
 
   // Función de navegación común para el botón y el tap de la tarjeta.
   void _navigateToProductDetail(BuildContext context) {
+    // ********** CAMBIO CLAVE: Usar PageRouteBuilder para remover la animación **********
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ProductDetailScreen(productId: product.id),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ProductDetailScreen(productId: product.id),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Retorna el widget hijo directamente, eliminando la transición animada.
+          // Esto crea un salto/transición instantánea sin animación.
+          return child;
+        },
+        // Opcional: Establecer la duración de la transición a cero para mayor seguridad
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
       ),
     );
+    // ***********************************************************************************
   }
 
   @override

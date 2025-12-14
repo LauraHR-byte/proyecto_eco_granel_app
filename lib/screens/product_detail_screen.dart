@@ -1,5 +1,6 @@
 import 'package:provider/provider.dart';
 import 'package:eco_granel_app/providers/cart_provider.dart';
+import 'package:eco_granel_app/widgets/cart_icon_button.dart';
 //import 'package:eco_granel_app/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -284,24 +285,33 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     // Se usa Scaffold estándar para manejar el AppBar simple.
     return Scaffold(
       appBar: AppBar(
-        // El título del AppBar es el nombre del producto ('Avena en hojuela')
-        title: Text(
-          widget.product.name,
-          style: const TextStyle(
-            color: _darkTextColor,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            fontFamily: "roboto",
-          ),
-        ),
-        centerTitle: false,
         backgroundColor: Colors.white,
-        elevation: 0, // Elimina la sombra para un look plano
+        elevation: 0,
+        centerTitle: false,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 30, color: _darkTextColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
+
+        title: Text(
+          widget.product.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: _darkTextColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            fontFamily: "roboto",
+          ),
+        ),
+
+        actions: const [
+          CartIconButton(iconSize: 28, iconColor: _darkTextColor),
+          SizedBox(width: 8),
+        ],
       ),
+
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
