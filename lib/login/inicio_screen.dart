@@ -7,7 +7,7 @@ import 'package:eco_granel_app/login/register_screen.dart';
 
 // Definición de colores basada en el main.dart y otros archivos
 const Color _primaryGreen = Color(0xFF4CAF50); // Verde principal
-const Color _primaryOrange = Color.fromRGBO(184, 94, 44, 1);
+const Color _primaryOrange = Color(0xFFC76939);
 
 // ----------------------------------------------------------------------
 // *** AJUSTADO: Custom Clipper para la curva inferior (Arc Clipper) ***

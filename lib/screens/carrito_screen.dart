@@ -1,5 +1,3 @@
-// Archivo: carrito_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
@@ -16,6 +14,14 @@ const Color _secondaryLightColor = Color(
 const Color _orangeColor = Color(
   0xFFC76939,
 ); // Color de adición (Usado en el detalle)
+
+// *** NUEVAS CONSTANTES DE ENVÍO ***
+const int _freeShippingThreshold = 50000; // 50.000 COP
+const int _standardShippingCost = 4500; // 4.500 COP
+const Color _shippingMessageBackground = Color(
+  0xFFE8F5E9,
+); // Gris verdoso muy claro
+const Color _shippingMessageTextColor = _primaryGreen;
 
 class CarritoScreen extends StatelessWidget {
   final VoidCallback onClose;
@@ -74,7 +80,7 @@ class CarritoScreen extends StatelessWidget {
             children: [
               const Divider(height: 1, color: _secondaryLightColor),
 
-              // --- Contenido del Carrito ---
+              // --- Contenido del Carrito (Lista de productos) ---
               Expanded(
                 child: isCartEmpty
                     ? _buildEmptyCart(
@@ -107,7 +113,7 @@ class CarritoScreen extends StatelessWidget {
             const Icon(
               Icons.shopping_cart_outlined,
               size: 80,
-              color: Color.fromRGBO(184, 94, 44, 1),
+              color: _orangeColor,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -155,95 +161,71 @@ class CarritoScreen extends StatelessWidget {
     );
   }
 
-  // ********** WIDGET PRINCIPAL DEL CONTENIDO DEL CARRITO **********
+  // ********** WIDGET PRINCIPAL DEL CONTENIDO DEL CARRITO (ListView) **********
   Widget _buildCartContent(BuildContext context, CartProvider cartProvider) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: cartProvider.itemCount,
-      itemBuilder: (context, index) {
-        final cartItem = cartProvider.items[index];
-        return _CartItemWidget(
-          item: cartItem,
-          formatCurrency: _formatCurrency,
-          onQuantityChanged: (newQuantity) {
-            cartProvider.updateItemQuantity(cartItem, newQuantity);
-          },
-          onRemove: () {
-            cartProvider.removeItem(cartItem);
-          },
-        );
-      },
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // La lista original de productos (usando Column y iterando, o ListView sin el SingleChildScrollView)
+            // Para mantener la simplicidad y el ListView.builder existente, se podría cambiar el
+            // `Expanded` en el `build` principal a un `SingleChildScrollView` y usar un `Column` aquí.
+
+            // He modificado la estructura para permitir el resumen DESPUÉS de la lista.
+            ...cartProvider.items.map((cartItem) {
+              return _CartItemWidget(
+                item: cartItem,
+                formatCurrency: _formatCurrency,
+                onQuantityChanged: (newQuantity) {
+                  cartProvider.updateItemQuantity(cartItem, newQuantity);
+                },
+                onRemove: () {
+                  cartProvider.removeItem(cartItem);
+                },
+              );
+            }),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
     );
   }
 
-  // ********** WIDGET DE RESUMEN DE PAGO **********
-  Widget _buildCheckoutSummary(
-    BuildContext context,
-    CartProvider cartProvider,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Fila de Total
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Total del Carrito:',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: _darkTextColor,
-                ),
-              ),
-              Text(
-                _formatCurrency(cartProvider.totalAmount),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryGreen,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
+  // ********** NUEVO WIDGET PARA EL MENSAJE DE ENVÍO GRATIS **********
+  Widget _buildShippingMessage(int subtotal) {
+    final isFree = subtotal >= _freeShippingThreshold;
 
-          // Botón de Pago
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // Lógica de pago: Navegar a la pantalla de Checkout/Pago
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Procediendo al pago...')),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor:
-                    _orangeColor, // Usa el color de adición para el checkout
-                padding: const EdgeInsets.symmetric(vertical: 15.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 5,
-              ),
-              child: const Text(
-                'Proceder al Pago',
-                style: TextStyle(fontSize: 20, fontFamily: "roboto"),
+    final String message = isFree
+        ? '¡Envío gratis aplicado!'
+        : '¡Te falta poco! A partir de ${_formatCurrency(_freeShippingThreshold)} COP en compras, obtienes envío gratis.';
+
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      margin: const EdgeInsets.only(bottom: 20.0),
+      decoration: BoxDecoration(
+        color: isFree ? _shippingMessageBackground : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isFree ? _primaryGreen : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.local_shipping_outlined,
+            color: isFree ? _shippingMessageTextColor : _unselectedDarkColor,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: isFree
+                    ? _shippingMessageTextColor
+                    : _unselectedDarkColor,
+                fontSize: 13,
               ),
             ),
           ),
@@ -251,9 +233,123 @@ class CarritoScreen extends StatelessWidget {
       ),
     );
   }
+
+  // ********** WIDGET DE RESUMEN DE PAGO (MODIFICADO) **********
+  Widget _buildCheckoutSummary(
+    BuildContext context,
+    CartProvider cartProvider,
+  ) {
+    final int subtotal = cartProvider.totalAmount;
+    final bool isFreeShipping = subtotal >= _freeShippingThreshold;
+    final int shipping = isFreeShipping ? 0 : _standardShippingCost;
+    final int total = subtotal + shipping;
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 0)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 1. Mensaje de Envío Gratis
+          _buildShippingMessage(subtotal),
+
+          // 2. Fila de Subtotal
+          _buildSummaryRow(
+            'Subtotal',
+            _formatCurrency(subtotal),
+            isTotal: false,
+          ),
+          const SizedBox(height: 5),
+
+          // 3. Fila de Envío
+          _buildSummaryRow(
+            'Envío',
+            isFreeShipping ? 'Gratis' : _formatCurrency(shipping),
+            isTotal: false,
+            isShipping: true,
+          ),
+          const Divider(height: 20, color: Colors.grey),
+
+          // 4. Fila de Total
+          _buildSummaryRow('Total', _formatCurrency(total), isTotal: true),
+          const SizedBox(height: 15),
+
+          // 5. Botón de Finalizar Compra
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // Lógica de pago: Navegar a la pantalla de Checkout/Pago
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Procediendo al pago...')),
+                );
+              },
+              icon: const Icon(Icons.shopping_cart_outlined, size: 24),
+              label: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 15.0),
+                child: Text(
+                  'Finalizar compra',
+                  style: TextStyle(fontSize: 20, fontFamily: "roboto"),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: _primaryGreen, // Usa el verde primario
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ********** WIDGET AUXILIAR PARA LAS FILAS DE RESUMEN **********
+  Widget _buildSummaryRow(
+    String title,
+    String value, {
+    required bool isTotal,
+    bool isShipping = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 16,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? _darkTextColor : Colors.grey[700],
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 16,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal
+                ? _darkTextColor
+                : (isShipping && value == 'Gratis')
+                ? _primaryGreen
+                : _darkTextColor,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ********** WIDGET INDIVIDUAL DEL ITEM DEL CARRITO **********
+// (Se mantiene sin cambios, pero debe estar fuera de la clase CarritoScreen para ser usado)
 class _CartItemWidget extends StatelessWidget {
   final CartItem item;
   final String Function(int) formatCurrency;
@@ -394,7 +490,7 @@ class _CartItemWidget extends StatelessWidget {
 
             // 3. Botón de Eliminar (Icono 'X')
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              icon: const Icon(Icons.delete_outline, color: _orangeColor),
               onPressed: onRemove,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
