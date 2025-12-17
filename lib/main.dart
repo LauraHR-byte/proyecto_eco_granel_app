@@ -176,7 +176,7 @@ class _EcoGranelState extends State<EcoGranel> {
   void _goToShop() {
     setState(() {
       _closeCart();
-      _selectedIndex = 2;
+      _selectedIndex = 2; //Tienda
     });
   }
 

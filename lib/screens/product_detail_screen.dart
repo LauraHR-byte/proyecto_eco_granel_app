@@ -4,6 +4,7 @@ import 'package:eco_granel_app/widgets/cart_icon_button.dart';
 //import 'package:eco_granel_app/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'package:eco_granel_app/screens/tienda_screen.dart';
 
 // -------------------------------------------------------------------
 // --- PALETA DE COLORES (Se mantiene igual) ---

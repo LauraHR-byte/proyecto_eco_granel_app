@@ -7,6 +7,7 @@ import 'package:eco_granel_app/login/inicio_screen.dart';
 import 'package:eco_granel_app/screens/edit_profile_screen.dart';
 import 'package:eco_granel_app/screens/guardado_screen.dart';
 import 'package:eco_granel_app/screens/like_screen.dart';
+import 'package:eco_granel_app/screens/pedidos_screen.dart';
 import 'privacidad_screen.dart';
 import 'condiciones_screen.dart';
 
@@ -135,6 +136,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const LikesScreen()),
+    );
+  }
+
+  // Función de navegación a PedidosScreen <--- 2. Nueva función de navegación
+  void _navigateToOrders() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PedidosScreen()),
     );
   }
 
@@ -328,9 +337,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
             _ProfileOptionRow(
               title: "Mis pedidos",
               icon: Icons.local_shipping_outlined,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Navegar a Mis Pedidos')),
-              ),
+              onTap:
+                  _navigateToOrders, // <--- 3. Usar la nueva función de navegación
             ),
 
             const Divider(
@@ -397,7 +405,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 }
 
 // ----------------------------------------------------------------------
-// PROFILE HEADER (CORREGIDO PARA ACTUALIZACIÓN INSTANTÁNEA)
+// PROFILE HEADER (CORREGIDO PARA ACTUALIZACIÓN INSTANTÁNEA) (Sin cambios)
 // ----------------------------------------------------------------------
 
 class _ProfileHeader extends StatefulWidget {
