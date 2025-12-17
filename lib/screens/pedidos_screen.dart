@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:eco_granel_app/screens/tienda_screen.dart';
+//import 'package:eco_granel_app/screens/tienda_screen.dart';
 
 const Color _orangeColor = Color(0xFFC76939);
 
@@ -78,14 +78,14 @@ class _PedidosScreenState extends State<PedidosScreen> {
   }
 
   // Función para navegar a TiendaScreen
-  void _goToShop() {
+  /*void _goToShop() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) =>
             const TiendaScreen(), // Navega a tu pantalla de tienda
       ),
     );
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +132,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
               child: Padding(
                 // AJUSTE SOLICITADO: Padding top a 20
                 padding: const EdgeInsets.only(
-                  top: 206.0,
+                  top: 220.0,
                   left: 5.0,
                   right: 5.0,
                   bottom: 5.0,
@@ -144,7 +144,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
                     // Icono de bolsa de compra
                     Icon(
                       Icons.shopping_bag_outlined,
-                      size: 76,
+                      size: 80,
                       color: _orangeColor,
                     ),
                     const SizedBox(
@@ -163,7 +163,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Aquí podrás ver los detalles de tus compras',
+                      'Cuando realices una compra, podrás \ndarle seguimiento desde aquí.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey,
@@ -173,7 +173,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
                     ),
                     const SizedBox(height: 28),
                     // *** BOTÓN "IR A LA TIENDA" ***
-                    ElevatedButton.icon(
+                    /*ElevatedButton.icon(
                       onPressed: _goToShop,
                       icon: const Icon(Icons.storefront_outlined, size: 24),
                       label: const Padding(
@@ -191,7 +191,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
                         ),
                         elevation: 5,
                       ),
-                    ),
+                    ),*/
                   ],
                 ),
               ),
