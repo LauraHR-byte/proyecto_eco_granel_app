@@ -28,9 +28,13 @@ class CartIconButton extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => CarritoScreen(
+                    builder: (context) => CarritoScreen(
                       onClose: () => Navigator.of(context).pop(),
-                      onGoToShop: () {},
+                      onGoToShop: () {
+                        Navigator.of(
+                          context,
+                        ).pop(); // Cierra el carrito y vuelve a la tienda,
+                      },
                     ),
                   ),
                 );
