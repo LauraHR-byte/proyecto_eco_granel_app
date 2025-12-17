@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../models/cart_item.dart';
+import 'package:eco_granel_app/screens/checkout_screen.dart';
 import 'package:intl/intl.dart'; // Necesitas añadir 'intl: ^0.18.1' a pubspec.yaml
 
 // Constantes de Color (Las mantengo tal cual están en tu código original)
@@ -66,7 +67,7 @@ class CarritoScreen extends StatelessWidget {
           ),
         ),
         centerTitle: false,
-        titleSpacing: 0.0,
+
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -285,9 +286,15 @@ class CarritoScreen extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                // Lógica de pago: Navegar a la pantalla de Checkout/Pago
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Procediendo al pago...')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CheckoutScreen(
+                      subtotal: subtotal,
+                      shipping: shipping,
+                      total: total,
+                    ),
+                  ),
                 );
               },
               icon: const Icon(Icons.shopping_cart_outlined, size: 24),
@@ -302,7 +309,7 @@ class CarritoScreen extends StatelessWidget {
                 foregroundColor: Colors.white,
                 backgroundColor: _primaryGreen, // Usa el verde primario
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 5,
               ),

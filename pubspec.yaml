@@ -35,6 +35,8 @@ dependencies:
   shared_preferences: ^2.2.2
   provider: ^6.0.5
   intl: ^0.18.1
+  
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -43,6 +45,8 @@ dependencies:
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
   flutter_riverpod: ^3.0.3
+  flutter_custom_tabs: ^2.4.1
+  cloud_functions: ^6.0.5
   # Nuevas dependencias para cargar imagenes desde el dispositivo
   # image_picker: ^1.0.4 
   # firebase_storage: ^11.5.3
