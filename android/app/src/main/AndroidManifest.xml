@@ -37,14 +37,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCuhPOUnUpYn3UlKToygdmlWa1q5hUlHQ0"/>
-
-        <queries>
-    <intent>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="https" />
-    </intent>
-</queries>    
+  
 
     </application>
     <!-- Required to query activities that can process text, see:
@@ -56,6 +49,10 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent> <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
         </intent>
-    </queries>
+    </queries>  
 </manifest>
