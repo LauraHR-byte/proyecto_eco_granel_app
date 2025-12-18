@@ -47,6 +47,8 @@ dependencies:
   flutter_riverpod: ^3.0.3
   flutter_custom_tabs: ^2.4.1
   cloud_functions: ^6.0.5
+  http: ^1.6.0
+  url_launcher: ^6.2.0
   # Nuevas dependencias para cargar imagenes desde el dispositivo
   # image_picker: ^1.0.4 
   # firebase_storage: ^11.5.3
