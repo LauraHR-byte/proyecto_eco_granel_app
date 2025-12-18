@@ -36,13 +36,10 @@ class CarritoScreen extends StatelessWidget {
 
   // Formateador de moneda
   String _formatCurrency(int amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'es_CO', // o el locale que uses (ej: 'es_ES')
-      symbol: '\$',
-      decimalDigits: 0,
-    );
+    final formatter = NumberFormat('#,###', 'es_CO');
+    String formattedNumber = formatter.format(amount);
     // Asume que la cantidad está en centavos si es necesario, pero aquí asumimos que es un entero en COP
-    return formatter.format(amount).replaceAll(',00', '');
+    return '\$$formattedNumber';
   }
 
   @override

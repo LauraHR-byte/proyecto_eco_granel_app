@@ -12,6 +12,8 @@ import 'package:eco_granel_app/providers/cart_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Importación de Firebase Auth para verificar el estado de inicio de sesión
 import 'package:firebase_auth/firebase_auth.dart';
+// *** IMPORTACIÓN PARA LA MONEDA ***
+import 'package:intl/date_symbol_data_local.dart';
 
 // Importación de tu pantalla de Onboarding
 import 'package:eco_granel_app/onboarding/onboarding_screen.dart';
@@ -43,6 +45,10 @@ User? _currentUser;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // *** INICIALIZACIÓN DE FORMATO DE MONEDA/FECHA (COLOMBIA) ***
+  // Esto permite que 'es_CO' funcione correctamente en toda la app
+  await initializeDateFormatting('es_CO', null);
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
