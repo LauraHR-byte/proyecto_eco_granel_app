@@ -56,6 +56,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: "^0.13.1"
   
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -79,8 +80,14 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
   - assets/images/
+  - assets/icon/
   #   - images/a_dot_ham.jpeg
-
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#FFFFFF" # Color de fondo para Android
+  adaptive_icon_foreground: "assets/icon/icon.png" # La imagen para Android
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
