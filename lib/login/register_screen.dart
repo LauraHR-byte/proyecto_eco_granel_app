@@ -1,4 +1,4 @@
-import 'package:eco_granel_app/login/inicio_screen.dart';
+//import 'package:eco_granel_app/login/inicio_screen.dart';
 // Importamos la librería de gestos para poder hacer clic en partes específicas del texto
 import 'package:flutter/gestures.dart';
 import 'package:eco_granel_app/screens/condiciones_screen.dart';
@@ -6,7 +6,7 @@ import 'package:eco_granel_app/screens/privacidad_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // NECESARIO PARA FIRESTORE
-import 'package:eco_granel_app/main.dart';
+//import 'package:eco_granel_app/main.dart';
 
 const Color _primaryGreen = Color(0xFF4CAF50);
 const Color _unselectedDarkColor = Color(0xFF424242);
@@ -49,14 +49,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // Función de registro de usuario
+  // Función de registro de usuario con verificación de email
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate() || !_acceptedTerms) {
-      // Se añade la validación de términos
       if (!_acceptedTerms) {
         setState(() {
-          _errorMessage =
-              'Debes aceptar los Términos y Condiciones y la Política de privacidad.';
+          _errorMessage = 'Debes aceptar los Términos y Condiciones.';
         });
       }
       return;
@@ -68,62 +66,104 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // 1. Crear el usuario en Firebase Authentication (Email y Contraseña)
+      // 1. Crear el usuario en Firebase Authentication
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
 
-      // 2. Obtener el usuario y el UID
       User? user = userCredential.user;
+
       if (user != null) {
+        // 2. ENVIAR CORREO DE VERIFICACIÓN (Usa la plantilla de tu imagen)
+        await user.sendEmailVerification();
+
         final uid = user.uid;
         final String fullName =
             '${_nameController.text.trim()} ${_lastNameController.text.trim()}';
 
-        // 3. GUARDAR LOS DATOS DE PERFIL EN FIRESTORE (PASO AÑADIDO)
+        // 3. Guardar datos en Firestore
         await _firestore.collection('users').doc(uid).set({
-          'fullName': fullName, // Nombre y Apellido
-          'username': _usernameController.text.trim(), // Alias
+          'fullName': fullName,
+          'username': _usernameController.text.trim(),
           'email': _emailController.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
+          'emailVerified': false, // Marcamos como no verificado inicialmente
         });
 
-        // Opcional: Establecer el nombre completo en Firebase Auth (para fines de depuración/compatibilidad)
         await user.updateDisplayName(_usernameController.text.trim());
-      }
 
-      // 4. Navegar a la pantalla principal
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const EcoGranel()),
-          (Route<dynamic> route) => false,
-        );
+        // 4. CERRAR SESIÓN Y MOSTRAR DIÁLOGO
+        // Firebase loguea al usuario al crear cuenta, pero debemos sacarlo hasta que verifique
+        await _auth.signOut();
+
+        if (mounted) {
+          _showVerificationDialog();
+        }
       }
     } on FirebaseAuthException catch (e) {
-      String message;
-      if (e.code == 'weak-password') {
-        message = 'La contraseña es demasiado débil.';
-      } else if (e.code == 'email-already-in-use') {
-        message = 'El correo ya está registrado.';
-      } else if (e.code == 'invalid-email') {
-        message = 'El formato del correo es inválido.';
-      } else {
-        message = 'Error de registro. Por favor, inténtalo de nuevo.';
-      }
-
+      // ... (Tus validaciones de errores de Firebase permanecen igual)
       setState(() {
-        _errorMessage = message;
+        _errorMessage = _handleAuthError(e.code);
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Ocurrió un error inesperado: $e';
+        _errorMessage = 'Error inesperado: $e';
       });
     } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  // Función auxiliar para mostrar el aviso al usuario
+  void _showVerificationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Obliga al usuario a interactuar con el botón
+      builder: (BuildContext dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('Verifica tu correo'),
+        content: Text(
+          'Hemos enviado un enlace de confirmación a ${_emailController.text.trim()}. '
+          'Por favor, revisa tu bandeja de entrada (o spam) antes de iniciar sesión.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // 1. Cerramos el diálogo
+              Navigator.pop(dialogContext);
+
+              // 2. Hacemos "pop" hasta que lleguemos a la primera ruta (InicioScreen)
+              // Esto hace que la pantalla de registro se deslice hacia afuera
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: const Text(
+              'Entendido',
+              style: TextStyle(
+                color: _primaryGreen,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Opcional: Limpiar el catch de errores para que sea más legible
+  String _handleAuthError(String code) {
+    switch (code) {
+      case 'weak-password':
+        return 'La contraseña es demasiado débil.';
+      case 'email-already-in-use':
+        return 'El correo ya está registrado.';
+      case 'invalid-email':
+        return 'El formato del correo es inválido.';
+      default:
+        return 'Error de registro. Inténtalo de nuevo.';
     }
   }
 
@@ -237,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             size: 30,
             color: _unselectedDarkColor,
           ),
-          onPressed: () => Navigator.of(context).pop(InicioScreen),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         backgroundColor: Colors.white,
         elevation: 0,

@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Maneja el inicio de sesión con correo/contraseña
+  // Maneja el inicio de sesión con correo/contraseña y validación de verificación
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -46,13 +46,33 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Intenta iniciar sesión con correo y contraseña
-      await _auth.signInWithEmailAndPassword(
+      // 1. Intenta iniciar sesión
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Si el inicio de sesión es exitoso, navega a la pantalla principal (EcoGranel)
+      User? user = userCredential.user;
+
+      // 2. VALIDACIÓN DE CORREO VERIFICADO
+      if (user != null) {
+        // Recargamos el usuario para obtener el estado más reciente de Firebase
+        await user.reload();
+        user = _auth.currentUser; // Actualizamos la referencia tras el reload
+
+        if (!user!.emailVerified) {
+          // Si NO está verificado: cerramos sesión y lanzamos error
+          await _auth.signOut();
+          setState(() {
+            _errorMessage =
+                'Por favor, verifica tu correo electrónico antes de entrar. Revisa tu bandeja de entrada.';
+            _isLoading = false;
+          });
+          return; // Detenemos la ejecución aquí
+        }
+      }
+
+      // 3. Si llega aquí, está verificado: Navega a la pantalla principal
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const EcoGranel()),
@@ -60,14 +80,14 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String message;
-      if (e.code == 'user-not-found') {
-        message = 'No se encontró un usuario para ese correo.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Contraseña incorrecta.';
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        message = 'Correo o contraseña incorrectos.';
       } else if (e.code == 'invalid-email') {
         message = 'El formato del correo es inválido.';
+      } else if (e.code == 'user-disabled') {
+        message = 'Esta cuenta ha sido deshabilitada.';
       } else {
-        message = 'Error de inicio de sesión. Por favor, inténtalo de nuevo.';
+        message = 'Error de inicio de sesión. Inténtalo de nuevo.';
       }
 
       setState(() {
@@ -75,12 +95,14 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Ocurrió un error inesperado. ($e)';
+        _errorMessage = 'Ocurrió un error inesperado.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
