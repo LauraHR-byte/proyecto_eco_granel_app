@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.eco_granel_app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -28,15 +28,20 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+        multiDexEnabled = true
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+        getByName("release") {
+            // En Kotlin DSL se usa 'isMinifyEnabled' y 'isShrinkResources'
+            isMinifyEnabled = false 
+            isShrinkResources = false
+
+            // Por ahora, para tu primer APK de prueba, puedes dejarlo en "debug"
+            // Pero recuerda que para la tienda necesitarás una llave .jks real
             signingConfig = signingConfigs.getByName("debug")
         }
     }

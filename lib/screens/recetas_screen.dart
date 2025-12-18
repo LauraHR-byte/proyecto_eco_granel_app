@@ -173,7 +173,7 @@ class Recetas extends StatelessWidget {
                 child: Text(
                   "Desayunos",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontFamily: "roboto",
                     fontWeight: FontWeight.bold,
                   ),
@@ -183,7 +183,7 @@ class Recetas extends StatelessWidget {
                 child: Text(
                   "Snacks",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontFamily: "roboto",
                     fontWeight: FontWeight.bold,
                   ),
@@ -193,7 +193,7 @@ class Recetas extends StatelessWidget {
                 child: Text(
                   "Favoritos",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontFamily: "roboto",
                     fontWeight: FontWeight.bold,
                   ),
