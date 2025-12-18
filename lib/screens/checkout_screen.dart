@@ -67,11 +67,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       debugPrint("Error: $e");
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // --- FUNCIÓN ACTUALIZADA: GUARDAR CON ESTADO PENDIENTE ---
   Future<String?> _saveOrderToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
@@ -88,11 +87,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       };
     }).toList();
 
-    // Guardamos la orden y obtenemos la referencia para poder actualizarla si falla
     final docRef = await FirebaseFirestore.instance.collection('orders').add({
       'userId': user.uid,
       'date': FieldValue.serverTimestamp(),
-      'status': 'Pendiente', // En espera de aprobación de pasarela
+      'status': 'Pendiente',
       'total': widget.total,
       'items': itemsMap,
       'shippingAddress': {
@@ -108,7 +106,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return docRef.id;
   }
 
-  // --- FUNCIÓN ACTUALIZADA: MANEJO DE CANCELACIÓN ---
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
     await FirebaseFirestore.instance.collection('orders').doc(orderId).update({
       'status': newStatus,
@@ -123,9 +120,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _phoneController.text.isEmpty ||
         _selectedCiudad == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, completa todos los campos obligatorios'),
-        ),
+        const SnackBar(content: Text('Por favor, completa todos los campos')),
       );
       return;
     }
@@ -134,7 +129,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     String? currentOrderId;
 
     try {
-      // 1. Guardar orden inicial (Estado: Pendiente)
       currentOrderId = await _saveOrderToFirestore();
 
       final String functionUrl =
@@ -153,8 +147,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               "phone": _phoneController.text,
               "city": _selectedCiudad,
             },
-            "external_reference":
-                currentOrderId, // Pasamos el ID para vincularlo
+            "external_reference": currentOrderId,
           },
         }),
       );
@@ -163,12 +156,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final decodedResponse = json.decode(response.body);
         final String urlString = decodedResponse['data']['init_point'];
 
-        if (mounted) {
-          Provider.of<CartProvider>(context, listen: false).clearCart();
-        }
-
         if (!mounted) return;
 
+        // 1. Abrir pasarela
         await launchUrl(
           Uri.parse(urlString),
           customTabsOptions: CustomTabsOptions(
@@ -178,42 +168,67 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
         );
-        if (!mounted) return;
-        Navigator.of(context).popUntil((route) => route.isFirst);
+
+        // 2. PAUSA DE SEGURIDAD: Evita que Flutter recupere el foco de la UI
+        // inmediatamente y muestre la pantalla de la tienda antes de que el navegador cargue.
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        if (mounted) {
+          // 3. Limpiamos carrito y cerramos pantallas
+          // Solo llegamos aquí cuando el usuario cierra la pestaña de Mercado Pago o el sistema retorna.
+          Provider.of<CartProvider>(context, listen: false).clearCart();
+
+          Navigator.of(context).popUntil((route) => route.isFirst);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Pedido procesado. Verifica el estado en "Mis Pedidos"',
+              ),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       } else {
-        throw Exception("Pago no iniciado");
+        throw Exception("Error en el servidor de pagos");
       }
     } catch (e) {
-      // 2. Si hay un error antes de abrir la pasarela, marcamos como Cancelado
       if (currentOrderId != null) {
-        await _updateOrderStatus(currentOrderId, 'Cancelado');
+        await _updateOrderStatus(currentOrderId, 'Fallido/Cancelado');
       }
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('La transacción no se logró pagar o falló.')),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Hubo un problema con la transacción.')),
+        );
+      }
     }
   }
-
-  // --- LOS MÉTODOS DE UI (build, _buildTextField, etc.) SE MANTIENEN IGUAL ---
-  // ... (He omitido el código repetido de UI para brevedad, pero usa el tuyo original)
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: Colors.white, // Fondo limpio para evitar destellos
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: _primaryGreen),
-              SizedBox(height: 20),
+              const CircularProgressIndicator(color: _primaryGreen),
+              const SizedBox(height: 20),
               Text(
                 "Procesando tu pedido...",
-                style: TextStyle(color: _primaryGreen),
+                style: TextStyle(
+                  color: _primaryGreen,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Te estamos redirigiendo al pago seguro",
+                style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
           ),
@@ -330,22 +345,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // --- MÉTODOS DE APOYO ORIGINALES ---
-  // (Debes incluir tus métodos _buildReadOnlyField, _buildSectionTitle, _inputDecoration, _buildTextField, _buildPriceRow)
-  // ...
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: Colors.grey[400]!),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: _unselectedDarkColor),
-      ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 

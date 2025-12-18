@@ -11,7 +11,6 @@ class PedidoDetalleScreen extends StatelessWidget {
 
   const PedidoDetalleScreen({super.key, required this.orderId});
 
-  // --- FUNCIÓN DE FORMATEO MANUAL ---
   String _formatCurrency(dynamic amount) {
     final formatter = NumberFormat('#,###', 'es_CO');
     int value = (amount is num) ? amount.toInt() : 0;
@@ -24,7 +23,7 @@ class PedidoDetalleScreen extends StatelessWidget {
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm');
 
     return Scaffold(
-      backgroundColor: Colors.white, // Fondo ajustado a Blanco
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Detalle del Pedido',
@@ -36,8 +35,7 @@ class PedidoDetalleScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: Colors.white,
-        elevation: 0, // Quitamos elevación para un look más limpio sobre blanco
-
+        elevation: 0,
         iconTheme: const IconThemeData(color: _unselectedDarkColor, size: 30),
       ),
       body: FutureBuilder<DocumentSnapshot>(
@@ -69,7 +67,6 @@ class PedidoDetalleScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Cabecera: ID, Fecha y Estado
                 _buildSectionCard(
                   child: Column(
                     children: [
@@ -86,18 +83,21 @@ class PedidoDetalleScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 24),
-                const Text(
-                  "Productos",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: _darkTextColor,
+                const SizedBox(height: 8),
+                // --- TÍTULO PRODUCTOS CON PADDING ---
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14.0),
+                  child: Text(
+                    "Productos",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _darkTextColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
 
-                // Lista de productos
                 ...items.map(
                   (item) => _OrderItemWidget(
                     item: item,
@@ -106,12 +106,16 @@ class PedidoDetalleScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 24),
-                const Text(
-                  "Información de Envío",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: _darkTextColor,
+                // --- TÍTULO INFORMACIÓN DE ENVÍO CON PADDING ---
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14.0),
+                  child: Text(
+                    "Información de Envío",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _darkTextColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -149,10 +153,14 @@ class PedidoDetalleScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
                 const Divider(),
-                _buildInfoRow(
-                  "Total Pagado",
-                  _formatCurrency(data['total'] ?? 0),
-                  isTotal: true,
+                // --- TOTAL PAGADO CON PADDING ---
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                  child: _buildInfoRow(
+                    "Total Pagado",
+                    _formatCurrency(data['total'] ?? 0),
+                    isTotal: true,
+                  ),
                 ),
                 const SizedBox(height: 30),
               ],
@@ -163,6 +171,7 @@ class PedidoDetalleScreen extends StatelessWidget {
     );
   }
 
+  // Los métodos _buildSectionCard, _buildInfoRow y la clase _OrderItemWidget se mantienen igual
   Widget _buildSectionCard({required Widget child}) {
     return Container(
       width: double.infinity,
@@ -170,16 +179,6 @@ class PedidoDetalleScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.shade100,
-        ), // Borde suave para fondo blanco
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: child,
     );
@@ -226,6 +225,7 @@ class PedidoDetalleScreen extends StatelessWidget {
   }
 }
 
+// ... (Clase _OrderItemWidget se mantiene igual que en tu código original)
 class _OrderItemWidget extends StatelessWidget {
   final Map<String, dynamic> item;
   final String Function(dynamic) formatCurrency;
@@ -240,12 +240,12 @@ class _OrderItemWidget extends StatelessWidget {
     final String weightUnit = item['weightUnit'] ?? '';
 
     return Card(
-      color: Colors.white,
+      color: Colors.grey.shade100,
       margin: const EdgeInsets.only(bottom: 16.0),
-      elevation: 1, // Sombra mínima para resaltar sobre el fondo blanco
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.grey.shade100), // Borde sutil
+        side: BorderSide(color: Colors.grey.shade100),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
