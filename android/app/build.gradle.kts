@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -6,6 +9,12 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -29,8 +38,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "4.0"
         multiDexEnabled = true
     }
 
@@ -43,6 +52,26 @@ android {
             // Por ahora, para tu primer APK de prueba, puedes dejarlo en "debug"
             // Pero recuerda que para la tienda necesitarás una llave .jks real
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            val fileName = keystoreProperties["storeFile"] as String
+            storeFile = file(fileName)
+            storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            // Reemplaza la línea de debug por esta:
+            signingConfig = signingConfigs.getByName("release")
+            
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
